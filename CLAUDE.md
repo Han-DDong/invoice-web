@@ -26,7 +26,7 @@ npx shadcn@latest add [component-name]
 
 ## 아키텍처 개요
 
-이 프로젝트는 한국어를 지원하는 **Next.js v15 스타터 킷**으로, App Router 아키텍처를 사용하여 구축되었습니다. 주요 특징:
+이 프로젝트는 한국어를 지원하는 **Next.js v16 스타터 킷**으로, App Router 아키텍처를 사용하여 구축되었습니다. 주요 특징:
 
 ### TailwindCSS v4 설정
 - **tailwind.config 파일 없음** - CSS 기반 설정 사용
