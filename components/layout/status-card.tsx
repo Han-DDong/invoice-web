@@ -38,7 +38,7 @@ export function StatusCard({
 }: StatusCardProps) {
   return (
     <PageContainer className="flex justify-center">
-      <Card className="w-full max-w-md text-center shadow-sm">
+      <Card className="w-full max-w-md rounded-2xl text-center shadow-sm">
         <CardHeader className="items-center gap-3">
           {/* 아이콘 배지 */}
           <div

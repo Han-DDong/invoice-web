@@ -1,5 +1,6 @@
 import { CircleAlert, Download, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { IconBadge } from "@/components/layout/icon-badge"
 import { PageContainer } from "@/components/layout/page-container"
 
 interface Step {
@@ -27,24 +28,24 @@ const steps: Step[] = [
 // 홈: 서비스 소개 전용 (견적서 목록은 노출하지 않음)
 export default function Home() {
   return (
-    <PageContainer className="max-w-3xl space-y-8">
+    <PageContainer className="space-y-10">
       {/* 제목 영역 */}
-      <section className="space-y-3 text-center">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">견적서 조회 시스템</h1>
+      <section className="space-y-4 pb-2 text-center">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">견적서 조회 시스템</h1>
         <p className="text-base text-muted-foreground sm:text-lg">
           노션 기반 견적서 관리 시스템에 오신 것을 환영합니다
         </p>
       </section>
 
       {/* 카드 1: 조회 방법 */}
-      <Card>
+      <Card className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-5 w-5" aria-hidden />
+          <CardTitle className="flex items-center gap-3 text-base">
+            <IconBadge icon={FileText} />
             견적서 조회 방법
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           {steps.map(({ title, description }) => (
             <div key={title} className="space-y-1">
               <h3 className="font-semibold">{title}</h3>
@@ -55,16 +56,16 @@ export default function Home() {
       </Card>
 
       {/* 카드 2: URL 예시 */}
-      <Card>
+      <Card className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="h-5 w-5" aria-hidden />
+          <CardTitle className="flex items-center gap-3 text-base">
+            <IconBadge icon={Download} />
             견적서 URL 예시
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {/* break-all: 좁은 모바일 화면에서 긴 URL이 넘치지 않도록 줄바꿈 */}
-          <code className="block break-all rounded-md bg-muted px-3 py-3 font-mono text-sm">
+          <code className="block break-all rounded-lg bg-muted px-4 py-3.5 font-mono text-sm">
             https://yourdomain.com/invoice/[견적서ID]
           </code>
           <p className="text-sm text-muted-foreground">
@@ -74,10 +75,10 @@ export default function Home() {
       </Card>
 
       {/* 카드 3: 문제 안내 */}
-      <Card>
+      <Card className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CircleAlert className="h-5 w-5" aria-hidden />
+          <CardTitle className="flex items-center gap-3 text-base">
+            <IconBadge icon={CircleAlert} />
             문제가 있나요?
           </CardTitle>
         </CardHeader>
