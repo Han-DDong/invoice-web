@@ -2,8 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PageContainer } from "@/components/layout/page-container"
+import { StatusCard } from "@/components/layout/status-card"
 import { parseUnavailableReason, type UnavailableReason } from "@/lib/access"
 
 export const metadata: Metadata = {
@@ -40,22 +39,13 @@ export default async function UnavailablePage({ searchParams }: UnavailablePageP
   const message = reasonMessages[parseUnavailableReason(reason)]
 
   return (
-    <PageContainer className="flex justify-center">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader className="items-center">
-          <ShieldAlert className="mx-auto mb-2 h-10 w-10 text-muted-foreground" aria-hidden />
-          <CardTitle className="text-xl">{message.title}</CardTitle>
-          <CardDescription>{message.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            문제가 계속되면 견적서를 보내 준 담당자에게 문의해 주세요.
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/">홈으로 이동</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </PageContainer>
+    <StatusCard icon={ShieldAlert} title={message.title} description={message.description}>
+      <p className="text-sm text-muted-foreground">
+        문제가 계속되면 견적서를 보내 준 담당자에게 문의해 주세요.
+      </p>
+      <Button asChild variant="outline">
+        <Link href="/">홈으로 이동</Link>
+      </Button>
+    </StatusCard>
   )
 }
