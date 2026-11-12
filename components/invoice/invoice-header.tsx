@@ -11,10 +11,10 @@ interface InvoiceHeaderProps {
 // 견적서 헤더: 번호, 상태, 발행일, PDF 버튼 (모바일은 세로, sm 이상은 가로 배치)
 export function InvoiceHeader({ invoice }: InvoiceHeaderProps) {
   return (
-    <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div className="space-y-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="text-2xl">견적서</CardTitle>
+    <CardHeader className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-start sm:justify-between">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <CardTitle className="text-3xl font-bold tracking-tight">견적서</CardTitle>
           <InvoiceStatusBadge status={invoice.status} />
         </div>
         <CardDescription>

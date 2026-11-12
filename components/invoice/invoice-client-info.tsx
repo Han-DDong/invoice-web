@@ -14,10 +14,10 @@ export function InvoiceClientInfo({ invoice }: InvoiceClientInfoProps) {
   ]
 
   return (
-    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <dl className="grid grid-cols-1 gap-5 rounded-xl bg-muted/40 p-5 sm:grid-cols-3">
       {fields.map((field) => (
-        <div key={field.label} className="space-y-1">
-          <dt className="text-sm text-muted-foreground">{field.label}</dt>
+        <div key={field.label} className="space-y-1.5">
+          <dt className="text-xs font-medium text-muted-foreground">{field.label}</dt>
           <dd className="font-medium">{field.value}</dd>
         </div>
       ))}
