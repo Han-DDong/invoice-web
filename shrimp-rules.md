@@ -21,7 +21,7 @@
   - `/invoice/[notionPageId]` → 실제는 `/invoice/[token]`
   - `NOTION_DATABASE_ID` → 실제는 `NOTION_INVOICE_DATA_SOURCE_ID`, `NOTION_ITEM_DATA_SOURCE_ID`
   - `/api/generate-pdf` (POST) → 실제 계획은 `app/invoice/[token]/pdf/route.ts`
-  - 상태값 `대기/승인/거절` → 실제는 `draft | published | expired`
+  - 상태값은 노션 값 `대기/승인/거절`을 그대로 사용한다 (`draft/published/expired` 아님)
 - **ROADMAP의 ✅ 표시를 구현 완료 증거로 믿지 않는다.** 구현 여부는 코드로 확인한다
 - 현재 미구현 (TODO): 노션 조회(F001), 견적서 상세 UI(F002), PDF 다운로드(F003) — `app/invoice/[token]/page.tsx`의 TODO 주석 참조
 
@@ -34,7 +34,7 @@
 | `app/unavailable/page.tsx` | 접근 불가 안내 (`?reason=`) |
 | `app/layout.tsx` | ThemeProvider + Navbar + Footer 래핑 |
 | `app/globals.css` | Tailwind v4 테마 (`@theme inline`) |
-| `components/ui/` | shadcn/ui 생성 컴포넌트 (badge, button, card, dropdown-menu) |
+| `components/ui/` | shadcn/ui 생성 컴포넌트 (badge, button, card, dropdown-menu, separator, skeleton, table) |
 | `components/layout/` | navbar, footer, page-container, theme-toggle |
 | `components/providers/` | theme-provider |
 | `lib/access.ts` | 공유 토큰 스키마, 접근 불가 사유 enum, URL 헬퍼 |
