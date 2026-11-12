@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { ShieldAlert } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { StatusCard } from "@/components/layout/status-card"
+import {
+  StatusCard,
+  StatusCardContactNote,
+  StatusCardHomeButton,
+} from "@/components/layout/status-card"
 import { parseUnavailableReason, type UnavailableReason } from "@/lib/access"
 
 export const metadata: Metadata = {
@@ -39,13 +41,14 @@ export default async function UnavailablePage({ searchParams }: UnavailablePageP
   const message = reasonMessages[parseUnavailableReason(reason)]
 
   return (
-    <StatusCard icon={ShieldAlert} title={message.title} description={message.description}>
-      <p className="text-sm text-muted-foreground">
-        문제가 계속되면 견적서를 보내 준 담당자에게 문의해 주세요.
-      </p>
-      <Button asChild variant="outline">
-        <Link href="/">홈으로 이동</Link>
-      </Button>
+    <StatusCard
+      icon={ShieldAlert}
+      tone="warning"
+      title={message.title}
+      description={message.description}
+    >
+      <StatusCardContactNote />
+      <StatusCardHomeButton />
     </StatusCard>
   )
 }

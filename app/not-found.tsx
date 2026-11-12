@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { FileQuestion } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { StatusCard } from "@/components/layout/status-card"
+import {
+  StatusCard,
+  StatusCardChecklist,
+  StatusCardHomeButton,
+} from "@/components/layout/status-card"
 
 export const metadata: Metadata = {
   title: "페이지를 찾을 수 없습니다",
@@ -15,15 +17,19 @@ export default function NotFound() {
   return (
     <StatusCard
       icon={FileQuestion}
+      code="404"
       title="페이지를 찾을 수 없습니다"
-      description="주소가 올바르지 않거나 이동되었거나 삭제된 페이지입니다."
+      description="요청하신 페이지가 존재하지 않습니다."
     >
-      <p className="text-sm text-muted-foreground">
-        견적서 링크를 받았다면 주소를 다시 확인하거나 담당자에게 문의해 주세요.
-      </p>
-      <Button asChild variant="outline">
-        <Link href="/">홈으로 이동</Link>
-      </Button>
+      {/* 확인 사항: 원인 추정 안내 (링크·토큰 등 민감 정보 미노출) */}
+      <StatusCardChecklist
+        items={[
+          "주소(URL)가 올바르게 입력되었는지 확인해 주세요.",
+          "페이지가 삭제되었거나 이동되었을 수 있습니다.",
+          "북마크나 받은 링크가 오래되었다면 담당자에게 새 링크를 요청해 주세요.",
+        ]}
+      />
+      <StatusCardHomeButton />
     </StatusCard>
   )
 }
