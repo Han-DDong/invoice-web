@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { InvoiceView } from "@/components/invoice/invoice-view"
 import { PageContainer } from "@/components/layout/page-container"
 import { getUnavailableUrl, shareTokenSchema } from "@/lib/access"
+import { dummyInvoice } from "@/lib/dummy/invoice"
 
 export const metadata: Metadata = {
   title: "견적서",
@@ -29,14 +30,10 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
   //   - 조회 실패 → getUnavailableUrl("error")
   // TODO(F002): 견적 기본 정보, 항목 표(모바일 카드형), 합계/부가세 표시
   // TODO(F003): PDF 다운로드 버튼 (app/invoice/[token]/pdf/route.ts)
+  // TODO(Task 008): 더미 데이터를 노션 조회 결과로 교체
   return (
     <PageContainer>
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle>견적서 준비 중</CardTitle>
-          <CardDescription>견적서 조회 기능은 아직 구현되지 않았습니다.</CardDescription>
-        </CardHeader>
-      </Card>
+      <InvoiceView invoice={dummyInvoice} />
     </PageContainer>
   )
 }
