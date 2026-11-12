@@ -86,7 +86,7 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 
 ### 4.1 UI / 반응형 / 테마
 
-- **모든 페이지는 `PageContainer`(`components/layout/page-container.tsx`)로 감싼다**. `mx-auto max-w-screen-2xl px-4`를 직접 반복 작성하지 않는다
+- **모든 페이지는 `PageContainer`(`components/layout/page-container.tsx`)로 감싼다**. 컨테이너 폭(`max-w-3xl`)은 `lib/site.ts`의 `containerWidthClass` 한 곳에서만 정의하며, navbar·footer·PageContainer가 함께 참조한다. 페이지별로 `max-w-*`를 따로 지정하지 않는다 (상태 안내 카드의 `max-w-md`만 예외)
 - 반응형 필수: 모바일 우선 → `sm:` `md:` `lg:` 순으로 확장
 - 견적 항목 표는 **모바일에서 카드형**으로 전환 (page.tsx TODO F002)
 - 색상은 CSS 변수 토큰(`bg-background`, `text-muted-foreground` 등)만 사용. 하드코딩 색상 금지 (다크 모드 깨짐)

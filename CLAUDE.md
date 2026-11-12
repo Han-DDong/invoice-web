@@ -56,7 +56,7 @@ npx shadcn@latest add [component-name]
 - CSS 변수를 사용하는 Geist 폰트(sans 및 mono)
 
 ### 스타일링 패턴
-- 일관된 중앙 정렬을 위해 모든 컨테이너에 `mx-auto max-w-screen-2xl px-4` 사용
+- 일관된 중앙 정렬을 위해 모든 컨테이너에 `lib/site.ts`의 `containerWidthClass`(`mx-auto w-full max-w-3xl px-4`) 사용
 - OKLCH 색상 값으로 라이트/다크 모드 간 더 나은 지각적 균일성 제공
 - `cn()` 유틸리티로 클래스 조합하는 shadcn/ui 패턴을 따르는 컴포넌트
 - Border radius 시스템: 기본값 `10px`로 `--radius-sm`부터 `--radius-xl`까지
