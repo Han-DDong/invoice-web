@@ -45,25 +45,37 @@ npm run dev
 | `/` | 서비스 소개 (견적서 목록 노출 안 함) | F011, F012 |
 | `/invoice/[token]` | 견적서 상세 (공유 토큰 링크로만 진입) | F001~F004 |
 | `/unavailable?reason=...` | 접근 불가 안내 (`invalid`, `unpublished`, `expired`, `error`) | F004, F010 |
+| (미매칭 경로) | 한국어 404 안내 (`app/not-found.tsx`) | F010 |
+
+`/invoice/[token]` 세그먼트에는 로딩 스켈레톤(`loading.tsx`)과 에러 경계(`error.tsx`, 다시 시도 지원)가 있습니다.
 
 ## 폴더 구조
 
 ```
 app/
   page.tsx                  # 홈 (서비스 소개)
-  invoice/[token]/page.tsx  # 견적서 상세
+  not-found.tsx             # 전역 404 페이지
+  invoice/[token]/
+    page.tsx                # 견적서 상세
+    loading.tsx             # 로딩 스켈레톤
+    error.tsx               # 에러 경계 (Client Component)
   unavailable/page.tsx      # 접근 불가 안내
 components/
   ui/                       # shadcn/ui 컴포넌트
-  layout/                   # navbar, footer, theme-toggle, page-container
+  layout/                   # navbar, footer, theme-toggle, page-container, status-card
   providers/                # 테마 프로바이더
 lib/
   access.ts                 # 공유 토큰/접근 불가 사유 스키마
+  constants.ts              # 공통 상수 (PDF 파일명 접두사 등)
   env.ts                    # 서버 환경변수 스키마
+  invoice-calculations.ts   # 항목 금액/합계 계산 (순수 함수)
   site.ts                   # 서비스 공통 정보
   utils.ts                  # cn 유틸리티
 types/
   invoice.ts                # 견적서 도메인 타입
+  invoice-error.ts          # 노션 조회 실패 타입, 접근 불가 사유 변환
+  notion.ts                 # 노션 응답 Zod 스키마
+  pdf.ts                    # PDF 문서 props 타입
 docs/
   PRD.md                    # 요구사항 문서
 ```
