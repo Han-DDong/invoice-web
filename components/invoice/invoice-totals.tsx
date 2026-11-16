@@ -1,6 +1,6 @@
-import { Wallet } from "lucide-react"
-import { formatCurrency } from "@/lib/format"
-import type { InvoiceTotals as InvoiceTotalsData } from "@/types/invoice"
+import { Wallet } from 'lucide-react'
+import { formatCurrency } from '@/lib/format'
+import type { InvoiceTotals as InvoiceTotalsData } from '@/types/invoice'
 
 interface InvoiceTotalsProps {
   totals: InvoiceTotalsData
@@ -11,7 +11,10 @@ interface InvoiceTotalsProps {
 // 총액 카드: 제목, 총 견적 금액(강조), 총 항목 수 배지 (부가세 없음, 항목 금액 합계만 표시)
 export function InvoiceTotals({ totals, itemCount }: InvoiceTotalsProps) {
   return (
-    <section aria-labelledby="invoice-totals-heading" className="rounded-xl border p-5 sm:p-6">
+    <section
+      aria-labelledby="invoice-totals-heading"
+      className="rounded-xl border p-5 sm:p-6"
+    >
       <h2
         id="invoice-totals-heading"
         className="flex items-center gap-2 text-lg font-semibold tracking-tight"
@@ -29,9 +32,11 @@ export function InvoiceTotals({ totals, itemCount }: InvoiceTotalsProps) {
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-4 py-2.5 text-sm text-muted-foreground">
           <dt>총 항목</dt>
-          <dd className="text-base font-semibold tabular-nums text-foreground">
-            {itemCount.toLocaleString("ko-KR")}
-            <span className="ml-1 text-sm font-normal text-muted-foreground">개</span>
+          <dd className="text-base font-semibold text-foreground tabular-nums">
+            {itemCount.toLocaleString('ko-KR')}
+            <span className="ml-1 text-sm font-normal text-muted-foreground">
+              개
+            </span>
           </dd>
         </div>
       </dl>

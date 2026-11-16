@@ -20,9 +20,7 @@
     },
     "shrimp-task-manager": {
       "command": "node",
-      "args": [
-        "/Users/hanjw/workspace/mcp-shrimp-task-manager/dist/index.js"
-      ],
+      "args": ["/Users/hanjw/workspace/mcp-shrimp-task-manager/dist/index.js"],
       "env": {
         "DATA_DIR": "/Users/hanjw/workspace/courses/invoice-web/shrimp_data",
         "TEMPLATES_USE": "en",

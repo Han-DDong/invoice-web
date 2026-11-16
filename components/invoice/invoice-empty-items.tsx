@@ -1,4 +1,4 @@
-import { PackageOpen } from "lucide-react"
+import { PackageOpen } from 'lucide-react'
 
 interface InvoiceEmptyItemsProps {
   // 안내 문구 (선택, 기본: 항목 없음 안내)
@@ -7,7 +7,7 @@ interface InvoiceEmptyItemsProps {
 
 // 견적 항목이 0건일 때 표시하는 빈 상태 안내
 export function InvoiceEmptyItems({
-  message = "등록된 견적 항목이 없습니다.",
+  message = '등록된 견적 항목이 없습니다.',
 }: InvoiceEmptyItemsProps) {
   return (
     <div
@@ -19,7 +19,7 @@ export function InvoiceEmptyItems({
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium">{message}</p>
-        <p className="text-sm text-muted-foreground text-balance">
+        <p className="text-sm text-balance text-muted-foreground">
           견적 내용이 궁금하다면 견적서를 보내 준 담당자에게 문의해 주세요.
         </p>
       </div>

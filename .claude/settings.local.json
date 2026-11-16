@@ -1,9 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "WebFetch",
-      "Bash"
-    ],
+    "allow": ["WebFetch", "Bash"],
     "deny": [],
     "ask": []
   },

@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
-import { siteConfig } from "@/lib/site";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+import { ThemeProvider } from '@/components/providers/theme-provider'
+import { Navbar } from '@/components/layout/navbar'
+import { Footer } from '@/components/layout/footer'
+import { siteConfig } from '@/lib/site'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: {
@@ -22,19 +22,19 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
       {/* suppressHydrationWarning: 브라우저 확장 프로그램(ColorZilla 등)이 body에 속성을 주입해 생기는 hydration 경고를 무시 */}
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
       >
         <ThemeProvider
           attribute="class"
@@ -48,5 +48,5 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

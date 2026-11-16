@@ -1,11 +1,11 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { InvoiceClientInfo } from "@/components/invoice/invoice-client-info"
-import { InvoiceHeader } from "@/components/invoice/invoice-header"
-import { InvoiceInquiryNote } from "@/components/invoice/invoice-inquiry-note"
-import { InvoiceItemsTable } from "@/components/invoice/invoice-items-table"
-import { InvoiceTotals } from "@/components/invoice/invoice-totals"
-import { calculateInvoiceTotals } from "@/lib/invoice-calculations"
-import type { Invoice } from "@/types/invoice"
+import { Card, CardContent } from '@/components/ui/card'
+import { InvoiceClientInfo } from '@/components/invoice/invoice-client-info'
+import { InvoiceHeader } from '@/components/invoice/invoice-header'
+import { InvoiceInquiryNote } from '@/components/invoice/invoice-inquiry-note'
+import { InvoiceItemsTable } from '@/components/invoice/invoice-items-table'
+import { InvoiceTotals } from '@/components/invoice/invoice-totals'
+import { calculateInvoiceTotals } from '@/lib/invoice-calculations'
+import type { Invoice } from '@/types/invoice'
 
 interface InvoiceViewProps {
   invoice: Invoice

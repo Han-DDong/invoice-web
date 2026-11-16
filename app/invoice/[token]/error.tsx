@@ -1,13 +1,13 @@
-"use client" // 에러 경계는 반드시 Client Component여야 함
+'use client' // 에러 경계는 반드시 Client Component여야 함
 
-import { useEffect } from "react"
-import { RotateCw, TriangleAlert } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect } from 'react'
+import { RotateCw, TriangleAlert } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   StatusCard,
   StatusCardContactNote,
   StatusCardHomeButton,
-} from "@/components/layout/status-card"
+} from '@/components/layout/status-card'
 
 interface InvoiceErrorProps {
   // 서버 컴포넌트에서 던진 값은 Error, 클라이언트에서 던진 값은 임의 타입일 수 있음
@@ -33,7 +33,11 @@ export default function InvoiceError({ error, retry }: InvoiceErrorProps) {
     >
       <StatusCardContactNote />
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button type="button" className="w-full sm:w-auto" onClick={() => retry()}>
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={() => retry()}
+        >
           <RotateCw aria-hidden />
           다시 시도
         </Button>

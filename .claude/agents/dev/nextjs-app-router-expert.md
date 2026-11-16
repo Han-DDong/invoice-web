@@ -17,44 +17,50 @@ color: blue
 ## 📁 폴더 및 파일 규칙 요약
 
 ### 최상위 구조
-| 항목 | 용도 |
-|---|---|
-| `app/` | App Router |
-| `public/` | 정적 에셋 |
-| `src/` | 선택적 소스 폴더 (이 프로젝트는 사용하지 않음) |
-| `proxy.ts` | 요청 프록시 (구 middleware) |
-| `instrumentation.ts` | OpenTelemetry/계측 |
-| `next.config.*`, `eslint.config.mjs`, `tsconfig.json` | 설정 |
-| `.env*` | 환경변수 (버전관리 제외) |
+
+| 항목                                                  | 용도                                           |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| `app/`                                                | App Router                                     |
+| `public/`                                             | 정적 에셋                                      |
+| `src/`                                                | 선택적 소스 폴더 (이 프로젝트는 사용하지 않음) |
+| `proxy.ts`                                            | 요청 프록시 (구 middleware)                    |
+| `instrumentation.ts`                                  | OpenTelemetry/계측                             |
+| `next.config.*`, `eslint.config.mjs`, `tsconfig.json` | 설정                                           |
+| `.env*`                                               | 환경변수 (버전관리 제외)                       |
 
 ### 라우팅 파일
-| 파일 | 역할 |
-|---|---|
-| `layout` | 공유 UI, 하위 세그먼트를 감쌈 |
-| `page` | 라우트를 공개 (없으면 URL 접근 불가) |
-| `loading` | Suspense 경계(스켈레톤) |
-| `error` | 에러 경계 (Client Component 필수, `reset` 제공) |
-| `global-error` | 루트 레이아웃까지 포함한 전역 에러 UI |
-| `not-found` | 404 UI (`notFound()` 호출 또는 미매칭 URL) |
-| `route` | API 엔드포인트 (`page`와 같은 세그먼트에 공존 불가) |
-| `template` | 이동 시마다 재마운트되는 레이아웃 |
-| `default` | 병렬 라우트 폴백 |
+
+| 파일           | 역할                                                |
+| -------------- | --------------------------------------------------- |
+| `layout`       | 공유 UI, 하위 세그먼트를 감쌈                       |
+| `page`         | 라우트를 공개 (없으면 URL 접근 불가)                |
+| `loading`      | Suspense 경계(스켈레톤)                             |
+| `error`        | 에러 경계 (Client Component 필수, `reset` 제공)     |
+| `global-error` | 루트 레이아웃까지 포함한 전역 에러 UI               |
+| `not-found`    | 404 UI (`notFound()` 호출 또는 미매칭 URL)          |
+| `route`        | API 엔드포인트 (`page`와 같은 세그먼트에 공존 불가) |
+| `template`     | 이동 시마다 재마운트되는 레이아웃                   |
+| `default`      | 병렬 라우트 폴백                                    |
 
 ### 컴포넌트 계층 (바깥 → 안쪽)
+
 `layout` → `template` → `error` → `loading` → `not-found` → `page` 또는 중첩 `layout`
 
 > 중요: `error`는 **같은 세그먼트의 `layout`을 잡지 못합니다.** 레이아웃의 에러는 상위 세그먼트의 `error` 또는 `global-error`가 처리합니다.
 
 ### 동적 라우트
+
 - `[slug]` 단일, `[...slug]` catch-all, `[[...slug]]` optional catch-all
 - 값은 `params` prop으로 접근합니다. 정확한 타입(Promise 여부 등)은 구현 전에 context7로 확인합니다.
 
 ### 라우트 그룹과 private folder
+
 - `(group)`: URL에 영향 없이 라우트 정리, 일부 라우트에만 레이아웃/`loading` 적용, 다중 루트 레이아웃(각 그룹에 `<html>`, `<body>` 필요)
 - `_folder`: 라우팅에서 제외되는 private 폴더. URL에 `_`가 필요하면 `%5F` 사용
 - `@slot`: 병렬 라우트, `(.)`, `(..)`, `(..)(..)`, `(...)`: 인터셉트 라우트(모달 등)
 
 ### 메타데이터 파일
+
 `favicon`, `icon`, `apple-icon`, `opengraph-image`, `twitter-image`, `sitemap`, `robots` (정적 파일 또는 `.ts` 생성형)
 
 ## 🗂️ 프로젝트 구성 전략

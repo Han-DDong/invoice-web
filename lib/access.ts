@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 // 공유 링크 접근 제어 관련 스키마와 헬퍼 (F004, F010)
 
@@ -10,30 +10,30 @@ export const shareTokenSchema = z
   .string()
   .min(16)
   .max(128)
-  .regex(/^[A-Za-z0-9_-]+$/);
+  .regex(/^[A-Za-z0-9_-]+$/)
 
 /** 접근 불가 사유 */
 export const unavailableReasonSchema = z.enum([
-  "invalid",
-  "unpublished",
-  "expired",
-  "error",
-]);
+  'invalid',
+  'unpublished',
+  'expired',
+  'error',
+])
 
-export type UnavailableReason = z.infer<typeof unavailableReasonSchema>;
+export type UnavailableReason = z.infer<typeof unavailableReasonSchema>
 
 /** 접근 불가 페이지 경로 */
-export const UNAVAILABLE_PATH = "/unavailable";
+export const UNAVAILABLE_PATH = '/unavailable'
 
 /** 사유를 포함한 접근 불가 페이지 URL을 만듭니다. */
 export function getUnavailableUrl(reason: UnavailableReason): string {
-  return `${UNAVAILABLE_PATH}?reason=${reason}`;
+  return `${UNAVAILABLE_PATH}?reason=${reason}`
 }
 
 /** 쿼리 파라미터 값을 사유로 변환합니다. 알 수 없는 값은 "invalid"로 처리합니다. */
 export function parseUnavailableReason(
-  value: string | string[] | undefined,
+  value: string | string[] | undefined
 ): UnavailableReason {
-  const result = unavailableReasonSchema.safeParse(value);
-  return result.success ? result.data : "invalid";
+  const result = unavailableReasonSchema.safeParse(value)
+  return result.success ? result.data : 'invalid'
 }

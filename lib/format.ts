@@ -1,6 +1,6 @@
 // 화면 표시용 포맷 유틸 (순수 함수)
 
-const currencyFormatter = new Intl.NumberFormat("ko-KR")
+const currencyFormatter = new Intl.NumberFormat('ko-KR')
 
 /** 금액을 "55,000,000원" 형태로 변환합니다. */
 export function formatCurrency(value: number): string {

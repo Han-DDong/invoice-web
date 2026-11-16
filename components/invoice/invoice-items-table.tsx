@@ -1,4 +1,4 @@
-import { InvoiceEmptyItems } from "@/components/invoice/invoice-empty-items"
+import { InvoiceEmptyItems } from '@/components/invoice/invoice-empty-items'
 import {
   Table,
   TableBody,
@@ -6,9 +6,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { formatCurrency } from "@/lib/format"
-import type { InvoiceItem } from "@/types/invoice"
+} from '@/components/ui/table'
+import { formatCurrency } from '@/lib/format'
+import type { InvoiceItem } from '@/types/invoice'
 
 interface InvoiceItemsTableProps {
   items: InvoiceItem[]
@@ -18,7 +18,10 @@ interface InvoiceItemsTableProps {
 export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
   return (
     <section aria-labelledby="invoice-items-heading" className="space-y-4">
-      <h2 id="invoice-items-heading" className="text-lg font-semibold tracking-tight">
+      <h2
+        id="invoice-items-heading"
+        className="text-lg font-semibold tracking-tight"
+      >
         견적 항목
       </h2>
 
@@ -29,16 +32,21 @@ export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
         <>
           {/* 모바일: 카드형 목록 */}
           <ul className="space-y-4 md:hidden">
-            {items.map((item) => (
-              <li key={item.id} className="space-y-3 rounded-xl border bg-card p-5 shadow-xs">
-                <p className="font-medium leading-snug">{item.name}</p>
+            {items.map(item => (
+              <li
+                key={item.id}
+                className="space-y-3 rounded-xl border bg-card p-5 shadow-xs"
+              >
+                <p className="leading-snug font-medium">{item.name}</p>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-muted-foreground">수량</dt>
                   <dd className="text-right tabular-nums">
-                    {item.quantity.toLocaleString("ko-KR")}
+                    {item.quantity.toLocaleString('ko-KR')}
                   </dd>
                   <dt className="text-muted-foreground">단가</dt>
-                  <dd className="text-right tabular-nums">{formatCurrency(item.unitPrice)}</dd>
+                  <dd className="text-right tabular-nums">
+                    {formatCurrency(item.unitPrice)}
+                  </dd>
                   <dt className="border-t pt-2 font-medium">금액</dt>
                   <dd className="border-t pt-2 text-right font-semibold tabular-nums">
                     {formatCurrency(item.amount)}
@@ -53,18 +61,28 @@ export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="h-12 px-5 text-muted-foreground">항목명</TableHead>
-                  <TableHead className="h-12 px-5 text-right text-muted-foreground">수량</TableHead>
-                  <TableHead className="h-12 px-5 text-right text-muted-foreground">단가</TableHead>
-                  <TableHead className="h-12 px-5 text-right text-muted-foreground">금액</TableHead>
+                  <TableHead className="h-12 px-5 text-muted-foreground">
+                    항목명
+                  </TableHead>
+                  <TableHead className="h-12 px-5 text-right text-muted-foreground">
+                    수량
+                  </TableHead>
+                  <TableHead className="h-12 px-5 text-right text-muted-foreground">
+                    단가
+                  </TableHead>
+                  <TableHead className="h-12 px-5 text-right text-muted-foreground">
+                    금액
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
+                {items.map(item => (
                   <TableRow key={item.id}>
-                    <TableCell className="px-5 py-4 font-medium">{item.name}</TableCell>
+                    <TableCell className="px-5 py-4 font-medium">
+                      {item.name}
+                    </TableCell>
                     <TableCell className="px-5 py-4 text-right tabular-nums">
-                      {item.quantity.toLocaleString("ko-KR")}
+                      {item.quantity.toLocaleString('ko-KR')}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right tabular-nums">
                       {formatCurrency(item.unitPrice)}

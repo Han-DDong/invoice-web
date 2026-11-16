@@ -1,17 +1,24 @@
-import Link from "next/link"
-import type { LucideIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PageContainer } from "@/components/layout/page-container"
-import { cn } from "@/lib/utils"
+import Link from 'next/link'
+import type { LucideIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { PageContainer } from '@/components/layout/page-container'
+import { cn } from '@/lib/utils'
 
 // 상태 톤: 안내(기본) / 경고 / 오류에 따라 아이콘 배경 색을 구분
-type StatusTone = "default" | "warning" | "destructive"
+type StatusTone = 'default' | 'warning' | 'destructive'
 
 const toneStyles: Record<StatusTone, string> = {
-  default: "bg-muted text-muted-foreground",
-  warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  destructive: "bg-destructive/10 text-destructive",
+  default: 'bg-muted text-muted-foreground',
+  warning:
+    'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  destructive: 'bg-destructive/10 text-destructive',
 }
 
 interface StatusCardProps {
@@ -32,7 +39,7 @@ export function StatusCard({
   icon: Icon,
   title,
   description,
-  tone = "default",
+  tone = 'default',
   code,
   children,
 }: StatusCardProps) {
@@ -43,8 +50,8 @@ export function StatusCard({
           {/* 아이콘 배지 */}
           <div
             className={cn(
-              "mx-auto flex size-14 items-center justify-center rounded-full",
-              toneStyles[tone],
+              'mx-auto flex size-14 items-center justify-center rounded-full',
+              toneStyles[tone]
             )}
           >
             <Icon className="size-7" aria-hidden />
@@ -61,9 +68,13 @@ export function StatusCard({
           <CardTitle className="text-xl">
             <h1>{title}</h1>
           </CardTitle>
-          <CardDescription className="text-balance">{description}</CardDescription>
+          <CardDescription className="text-balance">
+            {description}
+          </CardDescription>
         </CardHeader>
-        {children ? <CardContent className="space-y-4">{children}</CardContent> : null}
+        {children ? (
+          <CardContent className="space-y-4">{children}</CardContent>
+        ) : null}
       </Card>
     </PageContainer>
   )
@@ -71,7 +82,7 @@ export function StatusCard({
 
 // 확인 사항 목록 박스 (404 등 원인 안내용)
 export function StatusCardChecklist({
-  title = "확인 사항",
+  title = '확인 사항',
   items,
 }: {
   title?: string
@@ -81,7 +92,7 @@ export function StatusCardChecklist({
     <div className="rounded-lg border bg-muted/50 p-4 text-left">
       <p className="text-sm font-medium text-foreground">{title}</p>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground marker:text-muted-foreground/60">
-        {items.map((item) => (
+        {items.map(item => (
           <li key={item}>{item}</li>
         ))}
       </ul>
@@ -90,10 +101,14 @@ export function StatusCardChecklist({
 }
 
 // 담당자 문의 안내 문구 (404, 접근 불가, 에러 화면 공통)
-export function StatusCardContactNote({ children }: { children?: React.ReactNode }) {
+export function StatusCardContactNote({
+  children,
+}: {
+  children?: React.ReactNode
+}) {
   return (
-    <p className="text-sm text-muted-foreground text-balance">
-      {children ?? "문제가 계속되면 견적서를 보내 준 담당자에게 문의해 주세요."}
+    <p className="text-sm text-balance text-muted-foreground">
+      {children ?? '문제가 계속되면 견적서를 보내 준 담당자에게 문의해 주세요.'}
     </p>
   )
 }
@@ -101,7 +116,11 @@ export function StatusCardContactNote({ children }: { children?: React.ReactNode
 // 홈으로 이동 버튼 (공통)
 export function StatusCardHomeButton({ className }: { className?: string }) {
   return (
-    <Button asChild variant="outline" className={cn("w-full sm:w-auto", className)}>
+    <Button
+      asChild
+      variant="outline"
+      className={cn('w-full sm:w-auto', className)}
+    >
       <Link href="/">홈으로 이동</Link>
     </Button>
   )
