@@ -116,7 +116,7 @@
   - ✅ 데이터 무결성 및 일관성 검증 (합계 = 항목 금액 합계)
   - ✅ 성능 및 응답 시간 테스트
 
-### Phase 4: 고급 기능 및 최적화
+### Phase 4: 고급 기능 및 최적화 ✅
 
 실행 순서: 010-A → 011-A → 011-B → 010-B → 012-A → 012-B. 결정 사항은 각 작업 파일 상단에 기록했습니다. (2026-11-16)
 
@@ -145,20 +145,21 @@
     - ✅ API 키 보안 재확인 (응답, 429 본문, 로그에서 키·DB ID 0회)
     - CSP(`frame-ancestors` 포함)와 rate limit 외부 저장소는 도입하지 않음 (후속 과제)
 
-- **Task 012: 테스트 및 배포 준비** - 012-A 완료, 012-B 프리뷰 확인 대기 (사용자 수행 필요), 012-A, 012-B로 분할 ([작업 파일](../tasks/012-testing-deployment.md))
+- **Task 012: 테스트 및 배포 준비** ✅ - 완료 (브라우저 수동 체크는 미확인), 012-A, 012-B로 분할 ([작업 파일](../tasks/012-testing-deployment.md))
   - **012-A: 테스트 러너 도입과 핵심 로직 테스트** ✅
     - ✅ Vitest 도입 (`server-only` 빈 모듈 별칭, `@` 별칭은 Vite 내장 `resolve.tsconfigPaths`, `check-all`에 포함)
     - ✅ 순수 함수 테스트 (`invoice-calculations`, `notion-parser`, `isInvoiceExpired`, `shareTokenSchema`, `toSafeFileName`)
     - ✅ `getNotionClient` 모킹 기반 `getInvoiceByPageId` 테스트 (항목 0건, 100건 초과 페이지네이션, 다른 DB 페이지, 휴지통, 캐시)
     - ✅ PDF 라우트 상태코드 매핑 테스트 (404 / 410 / 500 / 200 / 429)
     - ✅ Task 009-1 미확인 3건(만료 410, 항목 0건, 100건 초과) 모킹 테스트로 해소 (실데이터 확인 아님)
-  - **012-B: 배포 준비** - 로컬 준비 완료, 프리뷰 확인은 사용자 수행 필요
+  - **012-B: 배포 준비** ✅ - Vercel 배포 확인 완료, 브라우저 수동 체크는 미확인
     - ✅ Vercel 배포 설정 점검 (자동 감지, `vercel.json` 불필요, 빌드에 노션 키 불필요)
     - ✅ 환경변수 3개와 환경별 설정 관리 (dev/preview/prod) README 문서화
-    - `assets/fonts` 번들 포함: 로컬 파일 추적·standalone 패키지로 확인 ✅, 프리뷰 배포 확인은 사용자 수행 필요
+    - ✅ `assets/fonts` 번들 포함: Vercel 배포에서 PDF 한글 정상 확인 (사용자 육안, 2026-11-16)
+    - ✅ Vercel 배포 curl 확인: 보안 헤더 3개, 404, PDF 429(14회 중 10회 이후), 화면·PDF 200
     - Chromium 외 브라우저 PDF 수동 체크리스트: README에 작성, Safari·Firefox·iOS Safari·Android Chrome 미확인 (사용자 수행 필요)
     - ✅ CI(`.github/workflows`)는 만들지 않음 (후속 과제)
-    - ROADMAP Phase 4 완료 표시: 프리뷰 확인 후
+    - ✅ ROADMAP Phase 4 완료 표시
 
 ## 작업별 상세 구현 사항
 
@@ -371,10 +372,10 @@
 
 **완료 기준**:
 
-- [ ] 프리뷰 배포에서 화면과 한글 PDF 정상 (사용자 수행 필요, 로컬 standalone으로는 확인)
+- [x] 배포 환경에서 화면과 PDF 정상 (curl: 화면 200, PDF 200 67,013B, 본문에 견적서 번호·클라이언트명·합계 확인). 한글 PDF는 사용자가 육안 확인
 - [x] 환경변수와 배포 절차가 README에 문서화됨
 - [ ] 브라우저 수동 체크리스트 결과 기록 (Chromium 외 미확인)
-- [ ] ROADMAP Phase 4 완료 표시
+- [x] ROADMAP Phase 4 완료 표시
 
 ## 기술적 의존성 관계
 
@@ -499,4 +500,4 @@ graph TD
 **📅 작성일**: 2026-11-11
 **📅 최종 업데이트**: 2026-11-16
 **🎯 목표**: MVP 핵심 기능 구현을 통한 빠른 시장 검증
-**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4는 010-A, 011-A, 011-B, 010-B, 012-A 완료, 012-B는 로컬 준비까지 완료하고 Vercel 프리뷰 확인과 브라우저 수동 체크(사용자 수행 필요)가 남음
+**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4 완료 (Task 010-A ~ 012-B, Vercel 배포 확인). 남은 것은 Chromium 외 브라우저 PDF 수동 체크(사용자 수행 필요)와 후속 과제(CSP, CI)

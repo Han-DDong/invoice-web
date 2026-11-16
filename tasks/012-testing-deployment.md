@@ -1,6 +1,6 @@
 # Task 012: 테스트 및 배포 준비 (012-A, 012-B)
 
-> 상태: 012-A 완료, 012-B 로컬 준비 완료 (2026-11-16). 프리뷰 배포 확인과 브라우저 수동 체크는 **사용자 수행 필요**
+> 상태: 012-A 완료, 012-B 배포 확인 완료 (2026-11-16, Vercel `invoice-web-two-wine.vercel.app`, curl 기준). 한글 PDF 육안 확인 완료(사용자). 브라우저 수동 체크(Safari, Firefox, iOS, Android)는 **사용자 수행 필요**
 
 ## 결정 사항 (2026-11-16, 사용자 지시 기준)
 
@@ -89,7 +89,7 @@ Task 009-1에서 실데이터가 없어 확인하지 못한 3건(만료 PDF 410,
 - [ ] 프리뷰 배포 응답 헤더에 011-B 보안 헤더가 있고, 응답과 로그에 키와 DB ID가 없음 — 사용자 수행 필요 (로컬 프로덕션에서는 확인)
 - [x] Chromium 외 브라우저 PDF 수동 체크리스트 결과 기록 (확인하지 못한 브라우저는 미확인으로 표기) — Safari, Firefox, iOS Safari, Android Chrome 모두 미확인으로 기록
 - [x] CI 포함 여부 결정 결과 기록 (미포함, 후속 과제)
-- [ ] ROADMAP Phase 4 완료 표시 — 프리뷰 확인 전이라 보류
+- [x] ROADMAP Phase 4 완료 표시 (브라우저 수동 체크는 미확인 항목으로 남김)
 
 ## 구현 단계
 
@@ -107,8 +107,8 @@ Task 009-1에서 실데이터가 없어 확인하지 못한 3건(만료 PDF 410,
 ### 012-B
 
 - [x] 배포 대상과 CI 포함 여부 확인 (Vercel, CI 미포함)
-- [ ] Vercel 프로젝트 연결, 환경변수 설정 (사용자 작업) — 사용자 수행 필요
-- [ ] 프리뷰 배포에서 화면, PDF, 헤더, rate limit, 캐시 확인 — 사용자 수행 필요
+- [x] Vercel 프로젝트 연결, 환경변수 설정 (사용자 작업) — 완료, `main` 배포 동작 확인
+- [x] 배포 환경에서 화면, PDF, 헤더, rate limit 확인 (curl). 캐시 적중은 응답 시간만 확인(0.52~0.66s)해 미확인
 - [x] 필요 시 `outputFileTracingIncludes` 추가 후 재배포 확인 — 로컬 추적 결과 불필요로 판단, 미추가 (프리뷰에서 최종 확인)
 - [ ] 브라우저 수동 체크리스트 진행 — 사용자 수행 필요 (README 체크리스트)
 - [ ] (승인 시) CI 워크플로 추가 — 해당 없음 (미승인, 후속 과제)
@@ -128,11 +128,11 @@ Task 009-1에서 실데이터가 없어 확인하지 못한 3건(만료 PDF 410,
 
 ### 012-B
 
-- [ ] `curl -sSI https://<프리뷰 도메인>/invoice/<정상 토큰>/pdf` → 200, `application/pdf`, 보안 헤더, `Cache-Control: no-store`
-- [ ] `curl -sS -o /dev/null -w '%{http_code}\n' https://<프리뷰 도메인>/invoice/short/pdf` → 404
+- [x] `curl -sSI https://<프리뷰 도메인>/invoice/<정상 토큰>/pdf` → 200, `application/pdf`, 보안 헤더 3개, `Cache-Control: no-store` (2026-11-16 확인)
+- [x] `curl -sS -o /dev/null -w '%{http_code}\n' https://<프리뷰 도메인>/invoice/short/pdf` → 404 (없는 ID도 404)
 - [ ] Playwright MCP: 프리뷰 도메인에서 정상 토큰 화면 → PDF 버튼 → 다운로드, 375 / 1280px 화면 확인
-- [ ] 프리뷰 배포 PDF를 열어 한글(클라이언트명, 항목명) 정상 표시 확인 (폰트 번들 포함 증거)
-- [ ] rate limit: 프리뷰 도메인 PDF 반복 요청 시 429 발생 여부와 인스턴스 분산으로 인한 편차 기록
+- [x] 배포 PDF를 열어 한글(클라이언트명, 항목명) 정상 표시 확인 (사용자 육안 확인, 폰트 번들 포함 증거)
+- [x] rate limit: PDF 14회 연속 요청 → 200 x10, 429 x4, `retry-after: 51` (이 측정에서는 편차 없음, 1회 측정)
 - [ ] 브라우저 수동: Safari(macOS), Firefox, iOS Safari, Android Chrome 각각 다운로드 파일명 `invoice-<견적서 번호>.pdf`, 실패 시 문구 표시
 
 ## 테스트 결과
