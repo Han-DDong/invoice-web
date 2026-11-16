@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Next.js 16 (App Router, Turbopack), React 19, TypeScript 6 (strict)
 - Tailwind CSS v4, shadcn/ui (new-york), Radix UI, Lucide, next-themes
 - Zod 4 (노션 응답과 환경변수 검증), @notionhq/client 5, @react-pdf/renderer 4
-- 개발 도구: ESLint, Prettier, Husky, lint-staged
+- 개발 도구: ESLint, Prettier, Husky, lint-staged, Vitest
 - 폼 라이브러리와 Server Actions는 쓰지 않습니다. 이 서비스는 조회와 다운로드만 합니다. (react-hook-form 미설치)
 
 ## 문서
@@ -27,18 +27,19 @@ npm run build          # 프로덕션 빌드
 npm run typecheck      # tsc --noEmit
 npm run lint           # ESLint (lint:fix로 자동 수정)
 npm run format:check   # Prettier 검사 (format으로 자동 수정)
-npm run check-all      # typecheck + lint + format:check (작업 후 권장)
+npm run test           # Vitest 단위 테스트 (vitest run)
+npm run check-all      # typecheck + lint + format:check + test (작업 후 권장)
 npx shadcn@latest add [component-name]
 ```
 
-- 테스트 러너는 아직 없습니다 (Task 012 예정). 동작 확인은 dev 서버와 Playwright MCP로 합니다.
+- 단위 테스트는 Vitest(`tests/*.test.ts`, `vitest.config.mts`, node 환경)입니다. 노션 클라이언트·환경변수·`next/cache`를 모킹하므로 키와 네트워크가 필요 없습니다. 화면(async Server Component)은 dev 서버와 Playwright MCP로 확인합니다.
 - `.husky/pre-commit`이 `lint-staged`(prettier, eslint)를 실행합니다.
 - Prettier는 세미콜론 없음, 작은따옴표, `prettier-plugin-tailwindcss`(클래스 정렬, `cn`/`cva` 포함)를 사용합니다.
 
 ## 작업 완료 체크리스트
 
 ```bash
-npm run check-all   # 타입, 린트, 포맷 통과
+npm run check-all   # 타입, 린트, 포맷, 테스트 통과
 npm run build       # 빌드 성공
 ```
 
@@ -63,12 +64,13 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 - 금액은 노션 값을 쓰지 않고 `수량 x 단가`로 재계산하며, 합계는 항목 금액 합계입니다. **부가세 없음**. (`lib/invoice-calculations.ts`)
 - 날짜는 KST 기준 문자열로 비교합니다. 만료는 `validUntil < 오늘(KST)`입니다.
 - 조회 실패는 `InvoiceFetchError`(not_found / query_failed / validation_failed)이고, 접근 판정 사유는 invalid / not_found / expired / error입니다 (`types/invoice-error.ts`).
-- 캐시는 쓰지 않습니다. 항상 최신을 조회하고, 캐싱은 Task 010에서 다룹니다.
+- 캐시: `getInvoiceByPageId`가 조회 **성공 결과만** `unstable_cache`로 30초(`INVOICE_CACHE_TTL_SECONDS`) 캐시합니다. 실패(not_found, query_failed, validation_failed)는 캐시하지 않고, 토큰 형식 검증과 만료 판정은 캐시 밖(`getAccessibleInvoice`)에서 매 요청 수행합니다. TTL을 넘긴 stale 값은 쓰지 않고 직접 재조회합니다. 노션 fetch 자체는 `no-store`이며 `cacheComponents`는 쓰지 않습니다.
 
 ### 라우트 동작
 
 - `app/invoice/[token]/page.tsx`: not_found → `notFound()`, 그 외 실패 → `redirect('/unavailable?reason=...')`.
-- `app/invoice/[token]/pdf/route.ts`: 같은 판정을 쓰고 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로, `Cache-Control: no-store`로 응답합니다.
+- `app/invoice/[token]/pdf/route.ts`: 같은 판정을 쓰고 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로, `Cache-Control: no-store`로 응답합니다. 판정 전에 IP당 1분 10회 인메모리 제한(초과 시 429 + `Retry-After`)을 겁니다. `proxy.ts`는 쓰지 않습니다. (Proxy에서 전역 상태 의존 금지)
+- 보안 헤더(`Referrer-Policy: no-referrer`, `X-Content-Type-Options`, `X-Frame-Options: DENY`)는 `next.config.ts`의 `headers()`에서 붙입니다. CSP와 CORS 허용 헤더는 넣지 않습니다.
 - 다운로드 버튼은 `<a>` 링크이고 `download` 속성이 없습니다. 실패 문구를 화면에 보여주기 위해서입니다.
 - `loading.tsx` 스트리밍 때문에 curl은 항상 200으로 보입니다. 리다이렉트는 브라우저(Playwright)로 확인해야 합니다.
 - 동적 라우트의 `params`는 Promise입니다.
@@ -81,7 +83,7 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 
 ### 서버 전용 코드
 
-`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
 
 ### UI
 
@@ -89,6 +91,8 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 - 모든 컨테이너는 `lib/site.ts`의 `containerWidthClass`(`mx-auto w-full max-w-3xl px-4`)를 씁니다.
 - Tailwind v4: `tailwind.config`가 없고 `app/globals.css`의 `@theme inline`에서 설정합니다. 다크 모드는 `next-themes`(class 방식)이고 색상은 OKLCH입니다.
 - 사용자에게 보이는 에러 화면에는 노션 에러 원문을 노출하지 않습니다. 원인은 서버 로그에만 남깁니다.
+- 서버 로그는 `lib/logger.ts`의 `logServerError`(JSON 한 줄: scope, stage, code, status, 토큰 앞 6자)로만 남기고 오류 객체를 `console.error`로 통째로 출력하지 않습니다. 노션 SDK 내부 로그도 `notionSdkLogger`로 대체했습니다.
+- 루트 레이아웃 오류는 `app/global-error.tsx`가 처리합니다. (자체 html/body, `globals.css` 직접 import, OS 다크 모드)
 
 ## 규칙
 

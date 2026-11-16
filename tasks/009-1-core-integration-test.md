@@ -95,3 +95,12 @@ Phase 3 전체(노션 조회, 접근 판정, PDF 생성과 다운로드)를 Play
 - `lib/dummy/invoice.ts`는 삭제했습니다. 더미 견적서(상태별, 항목 0건, 만료)로 하던 UI 미리보기는 더 이상 불가능하므로, 항목 0건 같은 화면은 노션에 테스트용 견적서를 만들어 확인해야 합니다. 필요하면 git 이력에서 복구할 수 있습니다.
 - 응답 시간은 개발 서버 기준이며, Notion API 응답 시간에 영향을 받습니다. 캐싱은 Task 010에서 다룹니다.
 - 만료(410), 항목 0건, 항목 100건 초과, 유효기간 당일(KST) 경계, Chromium 외 브라우저는 확인하지 못했습니다.
+
+## 후속 해소 (Task 012-A, 2026-11-16)
+
+아래 3건은 Vitest 모킹 테스트로 확인했습니다. **실데이터 확인이 아니라** 노션 클라이언트를 모킹한 단위 테스트입니다. ([작업 파일](012-testing-deployment.md))
+
+- 만료 PDF 410: `tests/pdf-route.test.ts` (`expired → 410`, 본문 "유효기간이 지난 견적서입니다."), `tests/invoice-access.test.ts` (KST 자정 경계 만료 전환)
+- 항목 0건: `tests/invoice-service.test.ts` (`items: []`), 합계 0은 `tests/pure-functions.test.ts`
+- 항목 100건 초과: `tests/invoice-service.test.ts` (150건, `dataSources.query` 2회, 커서 전달, 합계 일치)
+- 유효기간 당일(KST) 경계도 `isInvoiceExpired`, `getKstToday` 테스트로 확인했습니다. Chromium 외 브라우저는 여전히 미확인입니다. (Task 012-B)

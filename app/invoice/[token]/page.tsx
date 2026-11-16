@@ -16,7 +16,7 @@ interface InvoicePageProps {
 }
 
 // 견적서 상세 페이지 (공유 토큰 = 노션 페이지 ID 링크로만 진입)
-// 노션은 캐시 없이 요청마다 최신 데이터를 조회 (캐시 전략은 Task 010)
+// 노션 조회 결과는 서비스 계층에서 30초 캐시, 만료 판정은 요청마다 수행 (Task 010-A)
 export default async function InvoicePage({ params }: InvoicePageProps) {
   const { token } = await params
 
