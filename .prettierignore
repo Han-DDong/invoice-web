@@ -1,0 +1,11 @@
+# 빌드 산출물, 의존성
+.next
+node_modules
+
+# 도구가 만드는 파일
+.husky/_
+.playwright-mcp
+shrimp_data
+
+# 폰트 등 바이너리 자산은 prettier 대상이 아님
+assets
