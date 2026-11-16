@@ -10,52 +10,52 @@
 
 ### 1.1 정보 출처 우선순위 (충돌 시 위에서 아래 순서로 따른다)
 
-| 순위 | 출처 | 비고 |
-| --- | --- | --- |
-| 1 | 실제 코드 (`app/`, `lib/`, `types/`, `components/`) | 최우선 |
-| 2 | `.env.example`, `README.md`, `package.json` | 코드와 동기화된 문서 |
-| 3 | `CLAUDE.md` (프로젝트) | 일부 구버전 서술 있음 |
-| 4 | `docs/PRD.md`, `docs/ROADMAP.md` | **구버전 설계 포함. 참고용** |
+| 순위 | 출처                                                | 비고                         |
+| ---- | --------------------------------------------------- | ---------------------------- |
+| 1    | 실제 코드 (`app/`, `lib/`, `types/`, `components/`) | 최우선                       |
+| 2    | `.env.example`, `README.md`, `package.json`         | 코드와 동기화된 문서         |
+| 3    | `CLAUDE.md` (프로젝트)                              | 일부 구버전 서술 있음        |
+| 4    | `docs/PRD.md`, `docs/ROADMAP.md`                    | **구버전 설계 포함. 참고용** |
 
 - **PRD/ROADMAP의 다음 내용은 폐기된 설계이므로 따르지 않는다**
   - `/invoice/[notionPageId]` → 실제는 `/invoice/[token]`
-  - `NOTION_DATABASE_ID` → 실제는 `NOTION_INVOICE_DATA_SOURCE_ID`, `NOTION_ITEM_DATA_SOURCE_ID`
+  - `NOTION_DATABASE_ID` → 실제는 `NOTION_INVOICE_DATABASE_ID`, `NOTION_ITEM_DATABASE_ID`
   - `/api/generate-pdf` (POST) → 실제 계획은 `app/invoice/[token]/pdf/route.ts`
   - 상태값은 노션 값 `대기/승인/거절`을 그대로 사용한다 (`draft/published/expired` 아님)
 - **ROADMAP의 ✅ 표시를 구현 완료 증거로 믿지 않는다.** 구현 여부는 코드로 확인한다
-- 현재 미구현 (TODO): 노션 조회(F001), 견적서 상세 UI(F002), PDF 다운로드(F003) — `app/invoice/[token]/page.tsx`의 TODO 주석 참조
+- 구현 완료: 노션 조회(F001), 견적서 상세 UI(F002), PDF 다운로드(F003). 미구현은 Phase 4(성능·캐싱, 보안 강화, 테스트·배포)
 
 ## 2. 프로젝트 아키텍처
 
-| 경로 | 역할 |
-| --- | --- |
-| `app/page.tsx` | 홈 (서비스 소개 전용, 견적서 목록 노출 금지) |
-| `app/invoice/[token]/page.tsx` | 견적서 상세 (토큰 링크로만 진입) |
-| `app/unavailable/page.tsx` | 접근 불가 안내 (`?reason=`) |
-| `app/layout.tsx` | ThemeProvider + Navbar + Footer 래핑 |
-| `app/globals.css` | Tailwind v4 테마 (`@theme inline`) |
-| `components/ui/` | shadcn/ui 생성 컴포넌트 (badge, button, card, dropdown-menu, separator, skeleton, table) |
-| `components/layout/` | navbar, footer, page-container, theme-toggle |
-| `components/providers/` | theme-provider |
-| `lib/access.ts` | 공유 토큰 스키마, 접근 불가 사유 enum, URL 헬퍼 |
-| `lib/env.ts` | 서버 환경변수 Zod 검증 (`getServerEnv()`) |
-| `lib/site.ts` | `siteConfig` (이름/설명) |
-| `lib/utils.ts` | `cn()` |
-| `types/invoice.ts` | `Invoice`, `InvoiceItem`, `InvoiceStatus`, `InvoiceTotals` |
+| 경로                           | 역할                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| `app/page.tsx`                 | 홈 (서비스 소개 전용, 견적서 목록 노출 금지)                                             |
+| `app/invoice/[token]/page.tsx` | 견적서 상세 (토큰 링크로만 진입)                                                         |
+| `app/unavailable/page.tsx`     | 접근 불가 안내 (`?reason=`)                                                              |
+| `app/layout.tsx`               | ThemeProvider + Navbar + Footer 래핑                                                     |
+| `app/globals.css`              | Tailwind v4 테마 (`@theme inline`)                                                       |
+| `components/ui/`               | shadcn/ui 생성 컴포넌트 (badge, button, card, dropdown-menu, separator, skeleton, table) |
+| `components/layout/`           | navbar, footer, page-container, theme-toggle                                             |
+| `components/providers/`        | theme-provider                                                                           |
+| `lib/access.ts`                | 공유 토큰 스키마, 접근 불가 사유 enum, URL 헬퍼                                          |
+| `lib/env.ts`                   | 서버 환경변수 Zod 검증 (`getServerEnv()`)                                                |
+| `lib/site.ts`                  | `siteConfig` (이름/설명)                                                                 |
+| `lib/utils.ts`                 | `cn()`                                                                                   |
+| `types/invoice.ts`             | `Invoice`, `InvoiceItem`, `InvoiceStatus`, `InvoiceTotals`                               |
 
 ### 2.1 신규 파일 배치 규칙
 
-| 만들 것 | 위치 |
-| --- | --- |
-| 노션 클라이언트/조회/변환 로직 | `lib/` (서버 전용 파일, 예: `lib/notion.ts`) |
-| 노션 응답 Zod 스키마 | `lib/` 의 노션 파일 옆 또는 `lib/schemas/` |
-| 견적서 화면 전용 컴포넌트 | `components/invoice/` |
-| PDF 템플릿 컴포넌트 | `components/pdf/` |
-| PDF 다운로드 엔드포인트 | `app/invoice/[token]/pdf/route.ts` |
-| 로딩/에러 UI | `app/invoice/[token]/loading.tsx`, `error.tsx` |
-| 도메인 타입 | `types/` |
-| 커스텀 훅 | `hooks/` (alias `@/hooks`) |
-| shadcn 컴포넌트 | **직접 작성 금지** → `npx shadcn@latest add <name>` |
+| 만들 것                        | 위치                                                |
+| ------------------------------ | --------------------------------------------------- |
+| 노션 클라이언트/조회/변환 로직 | `lib/` (서버 전용 파일, 예: `lib/notion.ts`)        |
+| 노션 응답 Zod 스키마           | `lib/` 의 노션 파일 옆 또는 `lib/schemas/`          |
+| 견적서 화면 전용 컴포넌트      | `components/invoice/`                               |
+| PDF 템플릿 컴포넌트            | `components/pdf/`                                   |
+| PDF 다운로드 엔드포인트        | `app/invoice/[token]/pdf/route.ts`                  |
+| 로딩/에러 UI                   | `app/invoice/[token]/loading.tsx`, `error.tsx`      |
+| 도메인 타입                    | `types/`                                            |
+| 커스텀 훅                      | `hooks/` (alias `@/hooks`)                          |
+| shadcn 컴포넌트                | **직접 작성 금지** → `npx shadcn@latest add <name>` |
 
 ## 3. 코드 표준
 
@@ -106,12 +106,15 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 - 접근 불가 처리는 `redirect(getUnavailableUrl(reason))` 로만 한다. `"/unavailable?reason=..."` 문자열 직접 조합 금지
 - 상태/조건별 사유 매핑 (고정)
 
-| 조건 | reason |
-| --- | --- |
-| 토큰 형식 오류 / 토큰에 해당하는 견적서 없음 | `invalid` |
-| `status !== "published"` (draft) | `unpublished` |
-| 유효기간 경과 또는 `status === "expired"` | `expired` |
-| 노션 조회 실패 (네트워크/검증 실패) | `error` |
+| 조건                                                    | 화면 처리                     | PDF 라우트 응답 |
+| ------------------------------------------------------- | ----------------------------- | --------------- |
+| 토큰 형식 오류                                          | `/unavailable?reason=invalid` | 404             |
+| 견적서 없음 / 다른 DB 페이지 / 휴지통 페이지            | 404 화면 (`notFound()`)       | 404             |
+| 유효기간 경과 (`validUntil < 오늘(KST)`, 당일까지 유효) | `/unavailable?reason=expired` | 410             |
+| 노션 조회 실패 (API 오류, 검증 실패)                    | `/unavailable?reason=error`   | 500             |
+
+- 견적서 상태(`대기`/`승인`/`거절`)로는 접근을 막지 않는다. 판정은 `lib/invoice-access.ts`의 `getAccessibleInvoice` 한 곳에서 하며 화면과 PDF 라우트가 공유한다
+- `unpublished` 사유는 현재 어떤 경로에서도 발생하지 않는다 (`lib/access.ts`에는 남아 있음)
 
 - 견적서 상세·접근 불가 페이지의 `robots: { index: false, follow: false }` 메타데이터를 유지한다
 - 홈이나 다른 페이지에 견적서 목록·링크를 노출하지 않는다 (토큰 유출 방지)
@@ -122,9 +125,9 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 - 흐름: 노션 응답 → **Zod 검증** → `types/invoice.ts`의 `Invoice`로 변환 → 화면/PDF에서 사용
 - 노션 원본 타입을 컴포넌트에 직접 전달하지 않는다. 컴포넌트 props는 항상 `Invoice` / `InvoiceItem` / `InvoiceTotals`
 - `InvoiceItem.amount`는 **웹에서 `quantity * unitPrice`로 재계산**한다 (노션 Formula 값을 신뢰하지 않음)
-- 합계는 `InvoiceTotals`(`subtotal`, `vat`, `total`)로 계산하며 `vatRate`는 소수(0.1 = 10%)
+- 합계는 `InvoiceTotals`(`total`)로 계산하며 **부가세는 없다**. 합계 = 항목 금액(수량 x 단가) 합계
 - 날짜는 ISO 문자열로 저장하고 표시 시점에만 포맷한다
-- 노션 데이터소스는 2개: 견적서 DB(`NOTION_INVOICE_DATA_SOURCE_ID`), 견적 항목 DB(`NOTION_ITEM_DATA_SOURCE_ID`, 견적서 relation 보유)
+- 노션 DB는 2개(환경변수에는 database ID를 넣고 항목 조회 시 data source ID를 자동 조회): 견적서 DB(`NOTION_INVOICE_DATABASE_ID`), 견적 항목 DB(`NOTION_ITEM_DATABASE_ID`, 견적서 relation 보유)
 
 ### 4.5 PDF 생성 (F003)
 
@@ -136,17 +139,17 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 
 ## 5. 파일 연동 표준 (동시 수정 필수)
 
-| 변경 내용 | 함께 수정할 파일 |
-| --- | --- |
-| 환경변수 추가/삭제/개명 | `lib/env.ts` 스키마 + `.env.example` + `README.md` 환경변수 표 |
+| 변경 내용                                          | 함께 수정할 파일                                                                               |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 환경변수 추가/삭제/개명                            | `lib/env.ts` 스키마 + `.env.example` + `README.md` 환경변수 표                                 |
 | `UnavailableReason` 값 추가/삭제 (`lib/access.ts`) | `app/unavailable/page.tsx`의 `reasonMessages` (Record 키 전부 필요) + 호출하는 `redirect` 지점 |
-| 라우트 추가/삭제/개명 | `README.md` 라우트 표 + 폴더 구조 |
-| `lib/`·`types/`·`components/` 구조 변경 | `README.md` 폴더 구조 |
-| `types/invoice.ts` 필드 변경 | 노션 변환/Zod 스키마 + 견적서 상세 컴포넌트 + `components/pdf/` 템플릿 |
-| `siteConfig` 변경 | `app/layout.tsx` metadata, navbar/footer 표기 확인 |
-| 신규 npm 의존성 추가 | `README.md` 기술 스택 |
-| 기능 구현 완료 | `docs/ROADMAP.md` 상태 갱신 + 코드의 해당 `TODO(Fxxx)` 주석 제거 |
-| PRD와 실제 구현이 달라지는 결정 | `docs/PRD.md` 해당 부분 갱신 (문서는 한국어) |
+| 라우트 추가/삭제/개명                              | `README.md` 라우트 표 + 폴더 구조                                                              |
+| `lib/`·`types/`·`components/` 구조 변경            | `README.md` 폴더 구조                                                                          |
+| `types/invoice.ts` 필드 변경                       | 노션 변환/Zod 스키마 + 견적서 상세 컴포넌트 + `components/pdf/` 템플릿                         |
+| `siteConfig` 변경                                  | `app/layout.tsx` metadata, navbar/footer 표기 확인                                             |
+| 신규 npm 의존성 추가                               | `README.md` 기술 스택                                                                          |
+| 기능 구현 완료                                     | `docs/ROADMAP.md` 상태 갱신 + 코드의 해당 `TODO(Fxxx)` 주석 제거                               |
+| PRD와 실제 구현이 달라지는 결정                    | `docs/PRD.md` 해당 부분 갱신 (문서는 한국어)                                                   |
 
 ## 6. 워크플로우 표준
 

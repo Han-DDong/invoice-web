@@ -1,83 +1,98 @@
 # CLAUDE.md
 
-이 파일은 이 레포지토리에서 Claude Code (claude.ai/code)가 작업할 때 필요한 지침을 제공합니다.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+노션 DB에 입력한 견적서를 클라이언트가 공유 링크(`/invoice/[token]`)로 조회하고 PDF로 내려받는 서비스입니다. (Next.js 16 App Router, React 19, TypeScript strict, Tailwind v4, shadcn/ui)
+
+## 기술 스택
+
+- Next.js 16 (App Router, Turbopack), React 19, TypeScript 6 (strict)
+- Tailwind CSS v4, shadcn/ui (new-york), Radix UI, Lucide, next-themes
+- Zod 4 (노션 응답과 환경변수 검증), @notionhq/client 5, @react-pdf/renderer 4
+- 개발 도구: ESLint, Prettier, Husky, lint-staged
+- 폼 라이브러리와 Server Actions는 쓰지 않습니다. 이 서비스는 조회와 다운로드만 합니다. (react-hook-form 미설치)
+
+## 문서
+
+- `docs/PRD.md`: 요구사항 (기능 F001~F012)
+- `docs/ROADMAP.md`: 단계별 진행 상황. 완료 시 ✅ 표시 (`/docs:update-roadmap`)
+- `tasks/*.md`: 작업별 명세, 수락 기준, 테스트 결과
+- `shrimp-rules.md`: 상세 개발 규칙
 
 ## 개발 명령어
 
 ```bash
-# Turbopack을 사용한 개발 서버 실행
-npm run dev
-
-# Turbopack을 사용한 프로덕션 빌드  
-npm run build
-
-# 프로덕션 서버 실행
-npm run start
-
-# 린트 검사
-npm run lint
-
-# TypeScript 타입 체크
-npx tsc --noEmit
-
-# shadcn/ui 컴포넌트 추가
+npm run dev            # 개발 서버 (Turbopack, http://localhost:3000)
+npm run build          # 프로덕션 빌드
+npm run typecheck      # tsc --noEmit
+npm run lint           # ESLint (lint:fix로 자동 수정)
+npm run format:check   # Prettier 검사 (format으로 자동 수정)
+npm run check-all      # typecheck + lint + format:check (작업 후 권장)
 npx shadcn@latest add [component-name]
 ```
 
-## 아키텍처 개요
+- 테스트 러너는 아직 없습니다 (Task 012 예정). 동작 확인은 dev 서버와 Playwright MCP로 합니다.
+- `.husky/pre-commit`이 `lint-staged`(prettier, eslint)를 실행합니다.
+- Prettier는 세미콜론 없음, 작은따옴표, `prettier-plugin-tailwindcss`(클래스 정렬, `cn`/`cva` 포함)를 사용합니다.
 
-이 프로젝트는 한국어를 지원하는 **Next.js v16 스타터 킷**으로, App Router 아키텍처를 사용하여 구축되었습니다. 주요 특징:
+## 작업 완료 체크리스트
 
-### TailwindCSS v4 설정
-- **tailwind.config 파일 없음** - CSS 기반 설정 사용
-- `app/globals.css`에 `@theme inline` 블록으로 스타일 정의
-- 커스텀 다크 모드 variant: `@custom-variant dark (&:is(.dark *))`
-- PostCSS는 `@tailwindcss/postcss` 플러그인만 사용하도록 설정
-- 추가 애니메이션을 위한 `tw-animate-css` 사용
-- 라이트/다크 테마 모두에 OKLCH 값을 사용하는 색상 시스템
+```bash
+npm run check-all   # 타입, 린트, 포맷 통과
+npm run build       # 빌드 성공
+```
 
-### 컴포넌트 아키텍처
-- **shadcn/ui 컴포넌트**: `components/ui/`에 위치 (New York 스타일, RSC 활성화, Lucide 아이콘)
-- **레이아웃 컴포넌트**: `components/layout/`에 위치 (navbar, footer, theme-toggle)
-- **프로바이더**: `components/providers/`에 위치 (테마 프로바이더 래퍼)
-- **유틸리티 함수**: `lib/utils.ts`에 위치 (클래스 병합을 위한 cn 함수)
-- **컴포넌트 설정**: 커스텀 별칭이 포함된 `components.json`을 통해 관리
+UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확인합니다.
 
-### 테마 시스템
-- 시스템 감지가 활성화된 `next-themes` 사용
-- `attribute="class"` 및 `defaultTheme="system"`으로 설정된 ThemeProvider
-- 한국어 라벨(라이트, 다크, 시스템)로 라이트/다크/시스템 옵션을 제공하는 테마 토글 컴포넌트
-- 테마 지속성을 위해 루트 레이아웃에 `suppressHydrationWarning` 포함
+## 환경변수
 
-### 레이아웃 구조
-- 루트 레이아웃(`app/layout.tsx`)이 모든 페이지를 ThemeProvider로 감쌈
-- 고정된 navbar와 footer, 메인 콘텐츠는 flex-1 컨테이너에 배치
-- HTML에 한국어 설정(`lang="ko"`)
-- CSS 변수를 사용하는 Geist 폰트(sans 및 mono)
+`.env.example`을 `.env.local`로 복사해 채웁니다. `lib/env.ts`가 Zod로 검증합니다.
 
-### 스타일링 패턴
-- 일관된 중앙 정렬을 위해 모든 컨테이너에 `lib/site.ts`의 `containerWidthClass`(`mx-auto w-full max-w-3xl px-4`) 사용
-- OKLCH 색상 값으로 라이트/다크 모드 간 더 나은 지각적 균일성 제공
-- `cn()` 유틸리티로 클래스 조합하는 shadcn/ui 패턴을 따르는 컴포넌트
-- Border radius 시스템: 기본값 `10px`로 `--radius-sm`부터 `--radius-xl`까지
+- `NOTION_API_KEY`, `NOTION_INVOICE_DATABASE_ID`, `NOTION_ITEM_DATABASE_ID`
+- 값은 **database ID**입니다. data source ID가 아닙니다.
+- API 키와 DB ID는 응답 HTML, PDF, 로그, 사용자 노출 에러 문구에 나오면 안 됩니다.
 
-## 환경 설정
+## 아키텍처
 
-환경변수를 위해 `.env.example`을 `.env.local`로 복사하세요. 스타터 킷에는 일반적인 서비스(데이터베이스, 인증, API)에 대한 샘플 설정이 포함되어 있습니다.
+### 데이터 흐름
 
-## Import 별칭
+노션 → `lib/notion.ts`(서버 전용 클라이언트) → `lib/invoice-service.ts`(`getInvoiceByPageId`) → `lib/notion-parser.ts`(Zod 검증, 도메인 변환) → `lib/invoice-access.ts`(`getAccessibleInvoice`) → 페이지와 PDF 라우트가 공유.
 
-- `@/components` → `./components`
-- `@/lib` → `./lib`  
-- `@/app` → `./app`
-- `@/ui` → `./components/ui`
-- `@/hooks` → `./hooks`
-- `@/` → `./` (루트)
+- URL 토큰 = 노션 **페이지 ID**입니다. 공유 토큰 필드는 없습니다. 형식은 `lib/access.ts`의 `shareTokenSchema`로 검증합니다.
+- 페이지가 견적서 DB 소속인지 `parent.database_id`로 확인합니다. 항목 DB는 `databases.retrieve`로 data source를 찾아(캐시) `dataSources.query`로 조회합니다. (@notionhq/client 5는 data source 기반 API)
+- 금액은 노션 값을 쓰지 않고 `수량 x 단가`로 재계산하며, 합계는 항목 금액 합계입니다. **부가세 없음**. (`lib/invoice-calculations.ts`)
+- 날짜는 KST 기준 문자열로 비교합니다. 만료는 `validUntil < 오늘(KST)`입니다.
+- 조회 실패는 `InvoiceFetchError`(not_found / query_failed / validation_failed)이고, 접근 판정 사유는 invalid / not_found / expired / error입니다 (`types/invoice-error.ts`).
+- 캐시는 쓰지 않습니다. 항상 최신을 조회하고, 캐싱은 Task 010에서 다룹니다.
 
-## 한국어 지원
+### 라우트 동작
 
-이 프로젝트는 한국어를 위해 설정되었습니다:
-- HTML lang 속성을 "ko"로 설정
-- 한국어 라벨(라이트, 다크, 시스템)이 포함된 테마 토글
-- 한국어 설명이 포함된 환경변수
-- 한국어로 작성된 README 및 문서
+- `app/invoice/[token]/page.tsx`: not_found → `notFound()`, 그 외 실패 → `redirect('/unavailable?reason=...')`.
+- `app/invoice/[token]/pdf/route.ts`: 같은 판정을 쓰고 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로, `Cache-Control: no-store`로 응답합니다.
+- 다운로드 버튼은 `<a>` 링크이고 `download` 속성이 없습니다. 실패 문구를 화면에 보여주기 위해서입니다.
+- `loading.tsx` 스트리밍 때문에 curl은 항상 200으로 보입니다. 리다이렉트는 브라우저(Playwright)로 확인해야 합니다.
+- 동적 라우트의 `params`는 Promise입니다.
+
+### PDF
+
+- `@react-pdf/renderer`의 `renderToBuffer`에는 Document 요소가 필요해서 `InvoicePdfDocument({ invoice, totals })`를 직접 호출합니다. (`createElement`로 감싸면 타입 에러)
+- 한글 폰트는 `assets/fonts`의 Noto Sans KR OTF를 `lib/pdf/fonts.ts`에서 `process.cwd()` 기준으로 등록합니다. 파일 추적은 Next가 자동 포함하므로 별도 설정이 없습니다.
+- PDF 색상은 다크 모드와 무관하게 `StyleSheet`에 고정합니다.
+
+### 서버 전용 코드
+
+`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+
+### UI
+
+- `components/ui/`는 shadcn/ui(New York, RSC), `components/invoice/`는 견적서 화면, `components/pdf/`는 PDF 템플릿입니다.
+- 모든 컨테이너는 `lib/site.ts`의 `containerWidthClass`(`mx-auto w-full max-w-3xl px-4`)를 씁니다.
+- Tailwind v4: `tailwind.config`가 없고 `app/globals.css`의 `@theme inline`에서 설정합니다. 다크 모드는 `next-themes`(class 방식)이고 색상은 OKLCH입니다.
+- 사용자에게 보이는 에러 화면에는 노션 에러 원문을 노출하지 않습니다. 원인은 서버 로그에만 남깁니다.
+
+## 규칙
+
+- Next.js 16은 기존 지식과 다른 점이 많습니다. 코드를 쓰기 전에 `node_modules/next/dist/docs/`의 관련 가이드를 확인하세요. (`AGENTS.md` 참고)
+- 별칭: `@/*` → 프로젝트 루트 (`@/components`, `@/lib` 등)
+- `any` 금지, 들여쓰기 2칸, 주석·문서·커밋 메시지는 한국어 (변수명과 함수명은 영어)
+- 화면 하단 문구 "부가세는 별도로 청구됩니다"는 사용자 요청으로 그대로 둡니다.

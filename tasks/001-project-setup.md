@@ -16,11 +16,11 @@
 
 ## 환경변수 (3개)
 
-| 이름 | 설명 |
-| --- | --- |
-| `NOTION_API_KEY` | 노션 통합 시크릿 키 |
-| `NOTION_INVOICE_DATA_SOURCE_ID` | 견적서 DB 데이터 소스 ID |
-| `NOTION_ITEM_DATA_SOURCE_ID` | 견적 항목 DB 데이터 소스 ID |
+| 이름                         | 설명                         |
+| ---------------------------- | ---------------------------- |
+| `NOTION_API_KEY`             | 노션 통합 시크릿 키          |
+| `NOTION_INVOICE_DATABASE_ID` | 견적서 DB 데이터베이스 ID    |
+| `NOTION_ITEM_DATABASE_ID`    | 견적 항목 DB 데이터베이스 ID |
 
 `NOTION_DATABASE_ID`는 폐기된 설계입니다.
 

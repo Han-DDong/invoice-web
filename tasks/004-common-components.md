@@ -23,12 +23,12 @@ Phase 2(더미 데이터 기반 UI)의 선행 작업입니다. 견적서 화면�
 
 ## 더미 견적서
 
-| 토큰 | 용도 |
-| --- | --- |
-| `dummyinvoicepending0001` | 상태 대기 |
-| `dummyinvoiceapproved001` | 상태 승인 |
-| `dummyinvoicerejected001` | 상태 거절 |
-| `dummyinvoiceempty000001` | 항목 0건 (빈 상태 확인) |
+| 토큰                      | 용도                                      |
+| ------------------------- | ----------------------------------------- |
+| `dummyinvoicepending0001` | 상태 대기                                 |
+| `dummyinvoiceapproved001` | 상태 승인                                 |
+| `dummyinvoicerejected001` | 상태 거절                                 |
+| `dummyinvoiceempty000001` | 항목 0건 (빈 상태 확인)                   |
 | `dummyinvoiceexpired0001` | 유효기간 경과 (만료 처리 검증은 Task 008) |
 
 `getDummyInvoice(token)`은 해당하는 더미가 없으면 `null`을 반환합니다.

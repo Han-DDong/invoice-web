@@ -83,38 +83,38 @@
   - ✅ 에러 메시지 컴포넌트
   - ✅ 빈 상태(Empty state) 컴포넌트 (견적 항목 0건 등)
 
-### Phase 3: 핵심 기능 구현
+### Phase 3: 핵심 기능 구현 ✅
 
-- **Task 007: Notion API 통합 구현**
-  - Notion API 클라이언트 설정 (`@notionhq/client`, 환경변수 3개 사용)
-  - 견적서 데이터 조회 서비스 구현 (노션 페이지 ID 기반 단건 조회)
-  - 견적 항목 데이터 조회 로직 (`NOTION_ITEM_DATA_SOURCE_ID` 기준 관계 항목 조회)
-  - 에러 핸들링 및 재시도 로직 (`InvoiceFetchError` 활용)
-  - Zod 스키마 기반 데이터 변환 및 정규화 유틸리티
-  - Playwright MCP를 활용한 조회 플로우 통합 테스트
+- **Task 007: Notion API 통합 구현** ✅ - 완료 ([작업 파일](../tasks/007-notion-api-integration.md))
+  - ✅ Notion API 클라이언트 설정 (`@notionhq/client`, 환경변수 3개 사용)
+  - ✅ 견적서 데이터 조회 서비스 구현 (노션 페이지 ID 기반 단건 조회)
+  - ✅ 견적 항목 데이터 조회 로직 (`NOTION_ITEM_DATABASE_ID` 기준 관계 항목 조회)
+  - ✅ 에러 핸들링 및 재시도 로직 (`InvoiceFetchError` 활용)
+  - ✅ Zod 스키마 기반 데이터 변환 및 정규화 유틸리티
+  - ✅ Playwright MCP를 활용한 조회 플로우 통합 테스트
 
-- **Task 008: 견적서 데이터 페칭 및 렌더링**
-  - Server Component에서 Notion 데이터 페칭
-  - 더미 데이터를 실제 노션 데이터로 교체
-  - 동적 라우팅 파라미터(`/invoice/[token]`, 토큰 = 노션 페이지 ID) 처리
-  - 데이터 유효성 검증 및 존재하지 않는 견적서 처리 (F011)
-  - 노션 데이터 최신 상태 반영 (캐시 재검증 전략)
-  - Playwright MCP로 데이터 렌더링 E2E 테스트
+- **Task 008: 견적서 데이터 페칭 및 렌더링** ✅ - 완료 ([작업 파일](../tasks/008-invoice-data-rendering.md))
+  - ✅ Server Component에서 Notion 데이터 페칭
+  - ✅ 더미 데이터를 실제 노션 데이터로 교체
+  - ✅ 동적 라우팅 파라미터(`/invoice/[token]`, 토큰 = 노션 페이지 ID) 처리
+  - ✅ 데이터 유효성 검증 및 존재하지 않는 견적서 처리 (F011)
+  - ✅ 노션 데이터 최신 상태 반영 (캐시 없이 항상 최신 조회, 캐싱은 Task 010)
+  - ✅ Playwright MCP로 데이터 렌더링 E2E 테스트 (만료 실데이터는 미확인)
 
-- **Task 009: PDF 생성 및 다운로드 기능**
-  - @react-pdf/renderer 설치 및 설정
-  - PDF 템플릿 컴포넌트 개발 (`types/pdf.ts` 타입 활용)
-  - Route Handler 구현 (`app/invoice/[token]/pdf/route.ts`)
-  - PDF 다운로드 트리거 로직
-  - 한글 폰트 지원 설정
-  - Playwright MCP로 PDF 생성 플로우 테스트
+- **Task 009: PDF 생성 및 다운로드 기능** ✅ - 완료, 009-A(폰트·템플릿)와 009-B(라우트·버튼)로 분할 ([작업 파일](../tasks/009-pdf-generation.md))
+  - ✅ @react-pdf/renderer 설치 및 설정
+  - ✅ PDF 템플릿 컴포넌트 개발 (`types/pdf.ts` 타입 활용, 009-A)
+  - ✅ Route Handler 구현 (`app/invoice/[token]/pdf/route.ts`, 009-B)
+  - ✅ PDF 다운로드 트리거 로직
+  - ✅ 한글 폰트 지원 설정 (Noto Sans KR OTF, `assets/fonts`, 009-A)
+  - ✅ Playwright MCP로 PDF 생성 플로우 테스트
 
-- **Task 009-1: 핵심 기능 통합 테스트**
-  - Playwright MCP를 사용한 전체 사용자 플로우 테스트
-  - API 연동 및 비즈니스 로직 검증
-  - 에러 핸들링 및 엣지 케이스 테스트
-  - 데이터 무결성 및 일관성 검증 (합계 = 항목 금액 합계)
-  - 성능 및 응답 시간 테스트
+- **Task 009-1: 핵심 기능 통합 테스트** ✅ - 완료, 일부 시나리오 미확인 ([작업 파일](../tasks/009-1-core-integration-test.md))
+  - ✅ Playwright MCP를 사용한 전체 사용자 플로우 테스트
+  - ✅ API 연동 및 비즈니스 로직 검증
+  - ✅ 에러 핸들링 및 엣지 케이스 테스트 (만료 410, 항목 0건 실데이터는 미확인)
+  - ✅ 데이터 무결성 및 일관성 검증 (합계 = 항목 금액 합계)
+  - ✅ 성능 및 응답 시간 테스트
 
 ### Phase 4: 고급 기능 및 최적화
 
@@ -150,8 +150,8 @@
 - `.env.local` 파일에 환경 변수 설정 (비밀값이므로 직접 생성)
   ```env
   NOTION_API_KEY=secret_xxxxxxxxxxxxx
-  NOTION_INVOICE_DATA_SOURCE_ID=xxxxxxxxxxxxx
-  NOTION_ITEM_DATA_SOURCE_ID=xxxxxxxxxxxxx
+  NOTION_INVOICE_DATABASE_ID=xxxxxxxxxxxxx
+  NOTION_ITEM_DATABASE_ID=xxxxxxxxxxxxx
   ```
   (`NOTION_DATABASE_ID`는 폐기된 설계)
 - `lib/env.ts`의 환경변수 스키마 검증
@@ -219,18 +219,19 @@
 
 **구현 내용**:
 
-- `/lib/notion.ts` - Notion 클라이언트 초기화
-- `/lib/services/invoice.service.ts` - 견적서 데이터 서비스
-- `/lib/utils/notion-parser.ts` - Notion 데이터 파싱 유틸리티
+- `lib/notion.ts` - Notion 클라이언트 초기화
+- `lib/invoice-service.ts` - 견적서 데이터 서비스 (`getInvoiceByPageId`)
+- `lib/notion-parser.ts` - Notion 데이터 파싱 유틸리티
+- `lib/invoice-access.ts` - 접근 판정 (토큰 형식, 조회, 유효기간)
 - API 에러 핸들링 및 재시도 로직
 - 데이터 변환 및 검증 로직
 
 **완료 기준**:
 
-- [ ] Notion API 연결이 성공함
-- [ ] 노션 페이지 ID로 견적서 데이터를 정상적으로 조회함
-- [ ] 데이터가 Zod 스키마 검증 후 도메인 타입으로 변환됨
-- [ ] 에러 처리가 적절히 구현됨 (`InvoiceFetchError` 사유별 처리)
+- [x] Notion API 연결이 성공함
+- [x] 노션 페이지 ID로 견적서 데이터를 정상적으로 조회함
+- [x] 데이터가 Zod 스키마 검증 후 도메인 타입으로 변환됨
+- [x] 에러 처리가 적절히 구현됨 (`InvoiceFetchError` 사유별 처리)
 
 ### Task 009: PDF 생성 및 다운로드 기능
 
@@ -238,18 +239,18 @@
 
 **구현 내용**:
 
-- `/components/pdf/invoice-template.tsx` - PDF 템플릿
-- `/app/invoice/[token]/pdf/route.ts` - PDF 생성 Route Handler (계획 경로)
-- `/lib/pdf/generator.ts` - PDF 생성 로직
+- `components/pdf/invoice-template.tsx` - PDF 템플릿
+- `app/invoice/[token]/pdf/route.ts` - PDF 생성 Route Handler
+- `lib/pdf/fonts.ts` - 한글 폰트 등록 (`assets/fonts`의 Noto Sans KR)
 - 한글 폰트 설정 및 스타일링
 - 다운로드 트리거 및 파일명 설정
 
 **완료 기준**:
 
-- [ ] PDF가 정상적으로 생성됨
-- [ ] 한글이 올바르게 표시됨
-- [ ] 레이아웃이 견적서 형식에 맞음 (합계 = 항목 금액 합계, 부가세 없음)
-- [ ] 다운로드가 모든 브라우저에서 작동함
+- [x] PDF가 정상적으로 생성됨
+- [x] 한글이 올바르게 표시됨
+- [x] 레이아웃이 견적서 형식에 맞음 (합계 = 항목 금액 합계, 부가세 없음)
+- [ ] 다운로드가 모든 브라우저에서 작동함 (Chromium만 확인, 그 외 미확인)
 
 ## 기술적 의존성 관계
 
@@ -264,10 +265,12 @@ graph TD
     C --> G[Task 007: Notion API]
     E --> H[Task 008: 데이터 렌더링]
     G --> H
-    E --> I[Task 009: PDF 생성]
-    H --> I
+    D --> I1[Task 009-A: 폰트/PDF 템플릿]
+    H --> I2[Task 009-B: PDF 라우트/버튼]
+    I1 --> I2
+    I2 --> M[Task 009-1: 통합 테스트]
     H --> J[Task 010: 성능 최적화]
-    I --> J
+    M --> J
     J --> K[Task 011: 보안 강화]
     K --> L[Task 012: 테스트/배포]
 ```
@@ -276,29 +279,29 @@ graph TD
 
 ### 핵심 기능 구현 확인
 
-- [ ] **F001**: Notion API를 통한 견적서 데이터 조회
-- [ ] **F002**: 고유 URL로 특정 견적서 내용 표시
-- [ ] **F003**: 견적서를 PDF 파일로 변환 및 다운로드
+- [x] **F001**: Notion API를 통한 견적서 데이터 조회
+- [x] **F002**: 고유 URL로 특정 견적서 내용 표시
+- [x] **F003**: 견적서를 PDF 파일로 변환 및 다운로드
 
 ### 필수 지원 기능 구현 확인
 
-- [ ] **F010**: 노션 페이지 ID 기반 고유 URL (`/invoice/[token]`) - 라우트 골격과 토큰 형식 검증은 Phase 1에서 완료, 실제 조회 연동 대기
-- [ ] **F011**: 존재하지 않는 견적서 접근 시 에러 처리
-- [ ] **F012**: 반응형 레이아웃 (모바일/태블릿/데스크톱)
+- [x] **F010**: 노션 페이지 ID 기반 고유 URL (`/invoice/[token]`) - 토큰 형식 검증과 실제 노션 조회 연동 완료 (유효기간 만료 이동은 실데이터 미확인)
+- [x] **F011**: 존재하지 않는 견적서 접근 시 에러 처리
+- [x] **F012**: 반응형 레이아웃 (모바일/태블릿/데스크톱)
 
 ### 품질 검증
 
-- [ ] 모든 페이지가 정상적으로 로드됨
-- [ ] Notion 데이터 변경이 웹 화면에 반영됨
-- [ ] PDF 다운로드가 모든 환경에서 작동함
-- [ ] 에러 처리가 사용자 친화적임
-- [ ] 반응형 디자인이 모든 기기에서 작동함
+- [x] 모든 페이지가 정상적으로 로드됨
+- [x] Notion 데이터 변경이 웹 화면에 반영됨 (유효기간 변경 전후 화면 변화로 확인, 별도 통제 실험은 아님)
+- [ ] PDF 다운로드가 모든 환경에서 작동함 (Chromium만 확인)
+- [x] 에러 처리가 사용자 친화적임
+- [x] 반응형 디자인이 모든 기기에서 작동함 (375/768/1280px 확인, 실기기 미확인)
 
 ### 테스트 검증
 
-- [ ] API 연동 및 비즈니스 로직에 Playwright MCP 테스트 수행되었는가?
-- [ ] 모든 사용자 플로우가 E2E 테스트되었는가?
-- [ ] 에러 핸들링 및 엣지 케이스가 테스트되었는가?
+- [x] API 연동 및 비즈니스 로직에 Playwright MCP 테스트 수행되었는가?
+- [ ] 모든 사용자 플로우가 E2E 테스트되었는가? (만료, 항목 0건 실데이터 플로우 미확인)
+- [ ] 에러 핸들링 및 엣지 케이스가 테스트되었는가? (만료 410, 항목 0건, 100건 초과 항목 미확인)
 
 ## 예상 개발 일정
 
@@ -309,11 +312,11 @@ graph TD
   - ✅ UI 구현 (Task 004-006 완료)
   - ✅ 더미 데이터로 전체 플로우 검증
 
-- **Week 2**: Phase 3 (Task 007-009)
-  - Notion API 통합 (Task 007)
-  - 실제 데이터 연동 (Task 008)
-  - PDF 생성 기능 구현 (Task 009)
-  - 통합 테스트 및 검증 (Task 009-1)
+- **Week 2**: Phase 3 ✅ (Task 007-009-1)
+  - ✅ Notion API 통합 (Task 007)
+  - ✅ 실제 데이터 연동 (Task 008)
+  - ✅ PDF 생성 기능 구현 (Task 009-A, 009-B)
+  - ✅ 통합 테스트 및 검증 (Task 009-1)
 
 - **Week 3**: Phase 4 (Task 010-012)
   - 성능 최적화
@@ -362,6 +365,6 @@ graph TD
 
 **📝 문서 버전**: v2.0
 **📅 작성일**: 2026-11-11
-**📅 최종 업데이트**: 2026-11-12
+**📅 최종 업데이트**: 2026-11-16
 **🎯 목표**: MVP 핵심 기능 구현을 통한 빠른 시장 검증
-**📊 진행 상황**: Phase 1~2 완료 (Task 001~006), Phase 3~4 대기
+**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4 대기
