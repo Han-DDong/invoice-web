@@ -3,6 +3,7 @@ import 'server-only'
 import { Client } from '@notionhq/client'
 
 import { getServerEnv } from '@/lib/env'
+import { notionSdkLogger } from '@/lib/logger'
 
 // 노션 API 클라이언트 (서버 전용, F001)
 // Server Component / Route Handler에서만 import합니다. "use client" 파일에서 import하면 빌드 에러가 납니다.
@@ -34,7 +35,10 @@ export function getNotionClient(): Client {
     auth: env.NOTION_API_KEY,
     timeoutMs: NOTION_TIMEOUT_MS,
     retry: NOTION_RETRY_OPTIONS,
-    // 노션 데이터는 항상 최신으로 조회합니다. (캐시 전략은 Task 010에서 결정)
+    // SDK 기본 로거는 오류 원문(페이지 ID 포함)을 출력하므로 code만 남기는 로거로 대체 (Task 011-A)
+    logger: notionSdkLogger,
+    // fetch 단위로는 캐시하지 않습니다. 캐시는 lib/invoice-service.ts에서
+    // 조회 결과(Invoice) 단위로 한 곳에서만 합니다. (Task 010-A)
     fetch: (url, init) => fetch(url, { ...init, cache: 'no-store' }),
   })
 

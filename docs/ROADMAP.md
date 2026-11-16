@@ -118,26 +118,47 @@
 
 ### Phase 4: 고급 기능 및 최적화
 
-- **Task 010: 성능 최적화 및 캐싱**
-  - Next.js 캐싱 전략 구현
-  - 이미지 최적화 설정
-  - 폰트 최적화 (subset 생성)
-  - Notion API 호출 최적화
-  - React Suspense 경계 설정
+실행 순서: 010-A → 011-A → 011-B → 010-B → 012-A → 012-B. 결정 사항은 각 작업 파일 상단에 기록했습니다. (2026-11-16)
 
-- **Task 011: 보안 및 에러 처리 강화**
-  - API 키 보안 검증
-  - Rate limiting 구현
-  - 상세 에러 로깅 시스템
-  - 404/500 에러 처리 개선
-  - CORS 정책 설정
+- **Task 010: 성능 최적화 및 캐싱** ✅ - 완료, 010-A, 010-B로 분할 ([작업 파일](../tasks/010-performance-caching.md))
+  - **010-A: 노션 호출 최적화와 캐싱** ✅
+    - ✅ `getInvoiceByPageId` 결과(`Invoice`)를 서비스 계층에서 `unstable_cache`로 30초 캐시 (TTL 지난 stale 값은 쓰지 않고 재조회)
+    - ✅ 성공 결과만 캐시, not_found / query_failed / validation_failed는 캐시 안 함
+    - ✅ 토큰 형식 검증과 만료 판정(`isInvoiceExpired`)은 캐시 밖에서 매 요청 수행
+    - ✅ `lib/notion.ts`의 `cache: 'no-store'` 유지
+    - ✅ 화면 → PDF 요청 시 노션 호출 4회 → 2회(TTL 안 두 번째 요청 0회), 전후 측정 기록 (노션 값 변경 반영 지연은 미확인)
+  - **010-B: 폰트 subset과 렌더링 최적화 검토** ✅
+    - ✅ Noto Sans KR OTF 2개(합계 9,460,792B) 측정, subset은 글자 누락 위험으로 **미적용** (PDF에는 이미 사용 글자만 임베드되어 67KB, 이후 PDF 생성 약 0.03s)
+    - ✅ React Suspense 경계 검토: `loading.tsx`와 중복이므로 현행 유지
+    - ✅ 이미지 최적화: 해당 없음 (`next/image`, `<img>` 사용처와 `public/` 폴더 없음)
 
-- **Task 012: 테스트 및 배포 준비**
-  - 단위 테스트 작성 (컴포넌트, 유틸리티)
-  - 통합 테스트 작성 (API, 페이지)
-  - E2E 테스트 시나리오 구현 (Playwright MCP 사용)
-  - Vercel 배포 설정
-  - 환경별 설정 관리 (dev/staging/prod)
+- **Task 011: 보안 및 에러 처리 강화** ✅ - 완료, 011-A, 011-B로 분할 ([작업 파일](../tasks/011-security-error-handling.md))
+  - **011-A: 서버 로거와 에러 화면** ✅
+    - ✅ `lib/logger.ts`(server-only, JSON 한 줄)로 노션 오류 객체 직접 출력 대체 (code, status, stage, 토큰 앞 6자만)
+    - ✅ 교체 지점: `lib/invoice-service.ts`의 `logFetchError`와 검증 실패 로그 2곳, PDF 라우트 1곳 (+ 노션 SDK 내부 로거 대체)
+    - ✅ `app/global-error.tsx` 추가 (루트 레이아웃 오류 처리, OS 다크 모드)
+    - ✅ 404/500 문구 일관화
+  - **011-B: 보안 헤더와 rate limiting** ✅
+    - ✅ `next.config.ts` `headers()`: `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`
+    - ✅ PDF Route Handler 내부에서 `/invoice/[token]/pdf`만 인메모리 IP 제한 (1분 10회, 429, Retry-After), `proxy.ts`는 공식 문서의 전역 상태 의존 금지 안내로 미사용, 한계 README 명시
+    - ✅ CORS: 교차 출처 API가 없으므로 허용 헤더를 추가하지 않는 정책 문서화
+    - ✅ API 키 보안 재확인 (응답, 429 본문, 로그에서 키·DB ID 0회)
+    - CSP(`frame-ancestors` 포함)와 rate limit 외부 저장소는 도입하지 않음 (후속 과제)
+
+- **Task 012: 테스트 및 배포 준비** - 012-A 완료, 012-B 프리뷰 확인 대기 (사용자 수행 필요), 012-A, 012-B로 분할 ([작업 파일](../tasks/012-testing-deployment.md))
+  - **012-A: 테스트 러너 도입과 핵심 로직 테스트** ✅
+    - ✅ Vitest 도입 (`server-only` 빈 모듈 별칭, `@` 별칭은 Vite 내장 `resolve.tsconfigPaths`, `check-all`에 포함)
+    - ✅ 순수 함수 테스트 (`invoice-calculations`, `notion-parser`, `isInvoiceExpired`, `shareTokenSchema`, `toSafeFileName`)
+    - ✅ `getNotionClient` 모킹 기반 `getInvoiceByPageId` 테스트 (항목 0건, 100건 초과 페이지네이션, 다른 DB 페이지, 휴지통, 캐시)
+    - ✅ PDF 라우트 상태코드 매핑 테스트 (404 / 410 / 500 / 200 / 429)
+    - ✅ Task 009-1 미확인 3건(만료 410, 항목 0건, 100건 초과) 모킹 테스트로 해소 (실데이터 확인 아님)
+  - **012-B: 배포 준비** - 로컬 준비 완료, 프리뷰 확인은 사용자 수행 필요
+    - ✅ Vercel 배포 설정 점검 (자동 감지, `vercel.json` 불필요, 빌드에 노션 키 불필요)
+    - ✅ 환경변수 3개와 환경별 설정 관리 (dev/preview/prod) README 문서화
+    - `assets/fonts` 번들 포함: 로컬 파일 추적·standalone 패키지로 확인 ✅, 프리뷰 배포 확인은 사용자 수행 필요
+    - Chromium 외 브라우저 PDF 수동 체크리스트: README에 작성, Safari·Firefox·iOS Safari·Android Chrome 미확인 (사용자 수행 필요)
+    - ✅ CI(`.github/workflows`)는 만들지 않음 (후속 과제)
+    - ROADMAP Phase 4 완료 표시: 프리뷰 확인 후
 
 ## 작업별 상세 구현 사항
 
@@ -250,7 +271,110 @@
 - [x] PDF가 정상적으로 생성됨
 - [x] 한글이 올바르게 표시됨
 - [x] 레이아웃이 견적서 형식에 맞음 (합계 = 항목 금액 합계, 부가세 없음)
-- [ ] 다운로드가 모든 브라우저에서 작동함 (Chromium만 확인, 그 외 미확인)
+- [ ] 다운로드가 모든 브라우저에서 작동함 (Chromium만 확인, 그 외 미확인 → Task 012-B 수동 체크리스트)
+
+### Task 010-A: 노션 호출 최적화와 캐싱
+
+**구현 내용**:
+
+- `lib/invoice-service.ts` - `getInvoiceByPageId` 결과를 서비스 계층에서 캐시 (성공 결과만, 키는 페이지 ID)
+- `lib/invoice-access.ts` - 토큰 형식 검증과 `isInvoiceExpired`는 캐시 밖에서 매 요청 수행 (변경 없음 원칙)
+- `lib/notion.ts` - `cache: 'no-store'` 유지
+- 근거: `node_modules/next/dist/docs/01-app/02-guides/caching-without-cache-components.md`, `unstable_cache.md`
+
+**결정**: 캐시 TTL 30초, 캐시 방식 `unstable_cache` (2026-11-16)
+
+**완료 기준**:
+
+- [x] TTL 안에서 화면 → PDF 두 번째 요청은 노션을 호출하지 않음
+- [x] 조회 실패는 캐시되지 않음
+- [x] 만료 판정은 매 요청 KST 오늘 기준 (코드 구조로 확인, 실데이터 만료는 012-A 테스트)
+- [x] 전후 노션 호출 횟수와 응답 시간 기록
+
+### Task 011-A: 서버 로거와 에러 화면
+
+**구현 내용**:
+
+- `lib/logger.ts` - 서버 전용 로거 (code, status, stage, 토큰 일부만 기록)
+- `lib/invoice-service.ts`, `app/invoice/[token]/pdf/route.ts` - 로그 교체 4곳
+- `app/global-error.tsx` - 자체 `<html>`, `<body>`를 갖는 전역 에러 UI (`'use client'`, `retry`)
+- 404/500 문구 일관화 (`app/not-found.tsx`, `app/invoice/[token]/error.tsx`, `app/unavailable/page.tsx`, PDF 응답 본문)
+- 근거: `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md`
+
+**완료 기준**:
+
+- [x] 서버 로그에 오류 객체 원문, 키, DB ID, 전체 토큰이 없음
+- [x] 루트 레이아웃 오류 시 `global-error` 화면이 오류 원문 없이 표시됨
+- [x] 404/500 문구가 화면과 PDF 응답에서 일관됨
+
+### Task 011-B: 보안 헤더와 rate limiting
+
+**구현 내용**:
+
+- `next.config.ts` - `headers()`로 Referrer-Policy, X-Content-Type-Options, 프레이밍 차단
+- `lib/rate-limit.ts`, `app/invoice/[token]/pdf/route.ts` - PDF 경로 인메모리 IP 제한 (429, Retry-After)
+- CORS 허용 헤더 미추가 정책 문서화
+- 근거: `proxy.md`(Proxy는 전역 상태에 의존하지 말 것, 기본 Node.js 런타임), `content-security-policy.md`, `headers.md`
+
+**결정**: CSP 미도입, 외부 저장소 미도입, 구현 위치 Route Handler, IP당 1분 10회 (2026-11-16)
+
+**완료 기준**:
+
+- [x] 모든 응답에 보안 헤더 포함
+- [x] PDF 경로 제한 초과 시 429 + Retry-After
+- [x] 인메모리 제한의 한계와 CORS 정책 문서화
+
+### Task 010-B: 폰트 subset과 렌더링 최적화 검토
+
+**구현 내용**:
+
+- `assets/fonts/`, `lib/pdf/fonts.ts` - subset 적용 시에만 변경 (KS X 1001 2350자 + 영문·숫자·기호, 일회성 스크립트, npm 의존성 추가 금지)
+- Suspense 경계 검토: `app/invoice/[token]/loading.tsx`와 중복이면 현행 유지
+- 이미지 최적화: 해당 없음 (`next/image`, `<img>` 사용처와 `public/` 폴더 없음)
+
+**결정**: 폰트 subset 미적용 (측정만, 2026-11-16)
+
+**완료 기준**:
+
+- [x] subset 적용 여부 결정과 사유 기록
+- [ ] (적용 시) PDF 한글·숫자·기호 누락 없음, 크기와 생성 시간 전후 비교 — 해당 없음 (미적용)
+- [x] Suspense 검토 결론 기록
+
+### Task 012-A: 테스트 러너 도입과 핵심 로직 테스트
+
+**구현 내용**:
+
+- `vitest.config.mts` - `environment: 'node'`, `vite-tsconfig-paths`로 `@` 별칭, `server-only` 빈 모듈 별칭
+- 순수 함수, `getInvoiceByPageId`(노션 클라이언트 모킹), `getAccessibleInvoice`, PDF 라우트 `GET` 테스트
+- `toSafeFileName`을 PDF 라우트에서 `lib/`로 분리 (현재 비공개 함수)
+- 근거: `node_modules/next/dist/docs/01-app/02-guides/testing/vitest.md` (async Server Component는 Vitest 미지원, E2E 권장)
+
+**결정**: Vitest 도입 승인, `test`를 `check-all`에 포함 (2026-11-16)
+
+**완료 기준**:
+
+- [x] `npm run test`가 노션 키 없이 통과 (55개)
+- [x] 만료 410, 항목 0건, 100건 초과 페이지네이션이 테스트로 확인됨 (모킹)
+- [x] PDF 라우트 404 / 410 / 500 / 200 매핑 확인
+
+### Task 012-B: 배포 준비
+
+**구현 내용**:
+
+- Vercel 프로젝트 설정, 환경변수 3개(Development / Preview / Production) 문서화
+- 프리뷰 배포에서 `assets/fonts` 포함 확인, 누락 시 `next.config.ts`의 `outputFileTracingIncludes`
+- 프리뷰 배포에서 010-A 캐시, 011-B 헤더와 rate limit 확인
+- Chromium 외 브라우저 PDF 수동 체크리스트
+- (승인 시) `.github/workflows/ci.yml`
+
+**결정**: CI 미포함(후속 과제), 배포 대상 Vercel (2026-11-16)
+
+**완료 기준**:
+
+- [ ] 프리뷰 배포에서 화면과 한글 PDF 정상 (사용자 수행 필요, 로컬 standalone으로는 확인)
+- [x] 환경변수와 배포 절차가 README에 문서화됨
+- [ ] 브라우저 수동 체크리스트 결과 기록 (Chromium 외 미확인)
+- [ ] ROADMAP Phase 4 완료 표시
 
 ## 기술적 의존성 관계
 
@@ -269,11 +393,17 @@ graph TD
     H --> I2[Task 009-B: PDF 라우트/버튼]
     I1 --> I2
     I2 --> M[Task 009-1: 통합 테스트]
-    H --> J[Task 010: 성능 최적화]
-    M --> J
-    J --> K[Task 011: 보안 강화]
-    K --> L[Task 012: 테스트/배포]
+    M --> J1[Task 010-A: 노션 호출 캐싱]
+    J1 --> K1[Task 011-A: 서버 로거/에러 화면]
+    K1 --> K2[Task 011-B: 보안 헤더/rate limit]
+    J1 --> J2[Task 010-B: 폰트 subset 검토]
+    K2 --> L1[Task 012-A: 테스트 러너/핵심 로직 테스트]
+    J2 --> L1
+    L1 --> L2[Task 012-B: 배포 준비]
 ```
+
+- 010-B는 010-A에만 의존하고 011과는 독립이라 실행 순서를 바꿀 수 있습니다. 기본 순서는 011-B 다음입니다.
+- 012-A는 010-A의 캐시 래핑과 011-A의 로거가 반영된 코드를 테스트하므로 그 뒤에 둡니다.
 
 ## MVP 체크리스트
 
@@ -285,7 +415,7 @@ graph TD
 
 ### 필수 지원 기능 구현 확인
 
-- [x] **F010**: 노션 페이지 ID 기반 고유 URL (`/invoice/[token]`) - 토큰 형식 검증과 실제 노션 조회 연동 완료 (유효기간 만료 이동은 실데이터 미확인)
+- [x] **F010**: 노션 페이지 ID 기반 고유 URL (`/invoice/[token]`) - 토큰 형식 검증과 실제 노션 조회 연동 완료 (유효기간 만료 판정은 Task 012-A 테스트로 확인, 실데이터 만료 화면 이동은 미확인)
 - [x] **F011**: 존재하지 않는 견적서 접근 시 에러 처리
 - [x] **F012**: 반응형 레이아웃 (모바일/태블릿/데스크톱)
 
@@ -293,15 +423,15 @@ graph TD
 
 - [x] 모든 페이지가 정상적으로 로드됨
 - [x] Notion 데이터 변경이 웹 화면에 반영됨 (유효기간 변경 전후 화면 변화로 확인, 별도 통제 실험은 아님)
-- [ ] PDF 다운로드가 모든 환경에서 작동함 (Chromium만 확인)
+- [ ] PDF 다운로드가 모든 환경에서 작동함 (Chromium만 확인 → Task 012-B 브라우저 수동 체크리스트, 프리뷰 배포 확인)
 - [x] 에러 처리가 사용자 친화적임
 - [x] 반응형 디자인이 모든 기기에서 작동함 (375/768/1280px 확인, 실기기 미확인)
 
 ### 테스트 검증
 
 - [x] API 연동 및 비즈니스 로직에 Playwright MCP 테스트 수행되었는가?
-- [ ] 모든 사용자 플로우가 E2E 테스트되었는가? (만료, 항목 0건 실데이터 플로우 미확인)
-- [ ] 에러 핸들링 및 엣지 케이스가 테스트되었는가? (만료 410, 항목 0건, 100건 초과 항목 미확인)
+- [ ] 모든 사용자 플로우가 E2E 테스트되었는가? (만료, 항목 0건 실데이터 플로우 미확인 → Task 012-A 모킹 테스트, 012-B 프리뷰 배포 회귀)
+- [x] 에러 핸들링 및 엣지 케이스가 테스트되었는가? (만료 410, 항목 0건, 100건 초과를 Task 012-A Vitest 모킹 테스트로 확인, 실데이터 아님)
 
 ## 예상 개발 일정
 
@@ -318,10 +448,12 @@ graph TD
   - ✅ PDF 생성 기능 구현 (Task 009-A, 009-B)
   - ✅ 통합 테스트 및 검증 (Task 009-1)
 
-- **Week 3**: Phase 4 (Task 010-012)
-  - 성능 최적화
-  - 테스트 및 버그 수정
-  - 배포 준비 및 실제 배포
+- **Week 3**: Phase 4 (Task 010-A ~ 012-B)
+  - 노션 호출 캐싱 (Task 010-A)
+  - 서버 로거, 에러 화면, 보안 헤더, rate limiting (Task 011-A, 011-B)
+  - 폰트 subset 검토 (Task 010-B)
+  - 테스트 러너 도입과 핵심 로직 테스트 (Task 012-A)
+  - 배포 준비 및 실제 배포 (Task 012-B)
 
 ## 위험 요소 및 대응 방안
 
@@ -329,7 +461,7 @@ graph TD
 
 1. **Notion API 제한**
    - Rate limit 초과 가능성
-   - 대응: 캐싱 전략 구현, 요청 최적화
+   - 대응: 캐싱 전략 구현, 요청 최적화 (Task 010-A), PDF 경로 rate limiting (Task 011-B)
 
 2. **PDF 한글 렌더링 문제**
    - 폰트 임베딩 이슈
@@ -367,4 +499,4 @@ graph TD
 **📅 작성일**: 2026-11-11
 **📅 최종 업데이트**: 2026-11-16
 **🎯 목표**: MVP 핵심 기능 구현을 통한 빠른 시장 검증
-**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4 대기
+**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4는 010-A, 011-A, 011-B, 010-B, 012-A 완료, 012-B는 로컬 준비까지 완료하고 Vercel 프리뷰 확인과 브라우저 수동 체크(사용자 수행 필요)가 남음

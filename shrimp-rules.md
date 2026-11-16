@@ -160,7 +160,7 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 ```
 
 - 검증 명령: `npm run lint`, `npx tsc --noEmit`, 필요 시 `npm run build`
-- 테스트 러너(Jest/Vitest)는 설치되어 있지 않다. 사용자 요청 없이 도입하지 않는다
+- 테스트 러너는 Vitest(Task 012-A에서 사용자 요청으로 도입)다. 테스트는 `tests/*.test.ts`에 두고 `npm run test`(check-all 포함)로 실행한다. 다른 러너(Jest 등)는 사용자 요청 없이 추가하지 않는다
 - API/비즈니스 로직 변경은 Playwright MCP로 시나리오 검증 (정상 토큰 / 형식 오류 토큰 / 미발행 / 만료 / 노션 장애)
 - 커밋은 사용자가 요청할 때만 한다. 한국어 + 이모지 컨벤션 (`.claude/commands/git/commit.md` 참조)
   - 예: `✨ feat: 견적서 노션 조회 구현`, `📝 docs: README 라우트 표 갱신`
@@ -193,4 +193,4 @@ export function InvoiceHeader({ invoice }: any) { ... } // any 금지
 - ❌ 노션 Formula `amount` 값을 그대로 신뢰
 - ❌ `.env.local` 등 `.env*` 파일 커밋 (`.env.example`만 허용)
 - ❌ `shrimp_data/`, `.mcp.json`, `.claude/settings.local.json` 임의 수정·커밋
-- ❌ 사용자 요청 없는 의존성 대량 추가, 테스트 러너 도입, 영어 주석/문서 작성
+- ❌ 사용자 요청 없는 의존성 대량 추가, Vitest 외 테스트 러너 도입, 영어 주석/문서 작성

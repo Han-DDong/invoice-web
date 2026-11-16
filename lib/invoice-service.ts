@@ -1,12 +1,16 @@
 import 'server-only'
 
+import { createHash } from 'node:crypto'
+
 import {
   APIErrorCode,
   ClientErrorCode,
   isNotionClientError,
 } from '@notionhq/client'
+import { unstable_cache } from 'next/cache'
 
 import { getServerEnv } from '@/lib/env'
+import { logServerError } from '@/lib/logger'
 import { getNotionClient } from '@/lib/notion'
 import { parseNotionInvoice, parseNotionItems } from '@/lib/notion-parser'
 import type { Invoice } from '@/types/invoice'
@@ -15,16 +19,23 @@ import { NOTION_ITEM_PROPERTIES } from '@/types/notion'
 
 // 노션 견적서 단건 조회 서비스 (서버 전용, F001)
 // 실패 원인은 InvoiceFetchError로 구분해 반환하고, 원문은 서버 로그에만 남깁니다.
+// 조회 성공 결과만 unstable_cache로 짧게 캐시합니다. (Task 010-A)
 
 /** 견적서 조회 결과 */
 export type InvoiceResult =
   { ok: true; invoice: Invoice } | { ok: false; error: InvoiceFetchError }
 
+/**
+ * 견적서 캐시 TTL (초)
+ * 노션에서 고친 내용(금액, 유효기간, 휴지통 이동)은 최대 이 시간만큼 늦게 반영됩니다.
+ */
+export const INVOICE_CACHE_TTL_SECONDS = 30
+
 /** 항목 조회 1회당 최대 개수 (노션 최대값) */
 const ITEM_PAGE_SIZE = 100
 
 /** 조회 단계 (로그와 오류 매핑에 사용) */
-type FetchStage = 'page' | 'items'
+type FetchStage = 'page' | 'items' | 'cache'
 
 /** 노션 ID 비교용 정규화 (대시 제거, 소문자) */
 function normalizeNotionId(id: string): string {
@@ -120,16 +131,22 @@ function toFetchError(error: unknown, stage: FetchStage): InvoiceFetchError {
   return { kind: 'query_failed', cause: error }
 }
 
-/** 서버 로그에 실패 원인을 남깁니다. (화면 / 반환값에는 원문을 넣지 않음) */
-function logFetchError(stage: FetchStage, error: unknown): void {
-  if (isNotionClientError(error)) {
-    console.error(
-      `[invoice-service] 노션 조회 실패 (${stage}): ${error.code}`,
-      error
-    )
-    return
-  }
-  console.error(`[invoice-service] 노션 조회 실패 (${stage})`, error)
+/**
+ * 서버 로그에 실패 원인을 남깁니다. (화면 / 반환값에는 원문을 넣지 않음)
+ * code, status, 단계, 토큰 앞 6자만 기록합니다. (lib/logger.ts)
+ */
+function logFetchError(
+  stage: FetchStage,
+  error: unknown,
+  pageId: string
+): void {
+  logServerError({
+    scope: 'invoice-service',
+    stage,
+    event: '노션 조회 실패',
+    token: pageId,
+    error,
+  })
 }
 
 /** 견적서 페이지에 연결된 항목을 created_time 오름차순으로 모두 조회합니다. */
@@ -163,17 +180,10 @@ async function fetchItemPages(invoicePageId: string): Promise<unknown[]> {
 }
 
 /**
- * 노션 페이지 ID로 견적서와 항목을 조회해 Invoice로 변환합니다.
+ * 노션에서 견적서와 항목을 직접 조회해 Invoice로 변환합니다. (캐시 없음)
  * 반환값에는 노션 응답 원문, API 키, DB ID를 포함하지 않습니다.
  */
-export async function getInvoiceByPageId(
-  pageId: string
-): Promise<InvoiceResult> {
-  // 노션 ID 형식이 아니면 API를 호출하지 않고 바로 not_found
-  if (!isNotionId(pageId)) {
-    return { ok: false, error: { kind: 'not_found' } }
-  }
-
+async function fetchInvoiceFromNotion(pageId: string): Promise<InvoiceResult> {
   let page: unknown
   try {
     const { NOTION_INVOICE_DATABASE_ID } = getServerEnv()
@@ -186,7 +196,7 @@ export async function getInvoiceByPageId(
       return { ok: false, error: { kind: 'not_found' } }
     }
   } catch (error) {
-    logFetchError('page', error)
+    logFetchError('page', error, pageId)
     return { ok: false, error: toFetchError(error, 'page') }
   }
 
@@ -194,13 +204,19 @@ export async function getInvoiceByPageId(
   try {
     itemPages = await fetchItemPages(pageId)
   } catch (error) {
-    logFetchError('items', error)
+    logFetchError('items', error, pageId)
     return { ok: false, error: toFetchError(error, 'items') }
   }
 
   const items = parseNotionItems(itemPages)
   if (!items.ok) {
-    console.error('[invoice-service] 항목 검증 실패', items.issues)
+    logServerError({
+      scope: 'invoice-service',
+      stage: 'validation',
+      event: '항목 검증 실패',
+      token: pageId,
+      issues: items.issues,
+    })
     return {
       ok: false,
       error: { kind: 'validation_failed', issues: items.issues },
@@ -209,7 +225,13 @@ export async function getInvoiceByPageId(
 
   const invoice = parseNotionInvoice(page, items.data)
   if (!invoice.ok) {
-    console.error('[invoice-service] 견적서 검증 실패', invoice.issues)
+    logServerError({
+      scope: 'invoice-service',
+      stage: 'validation',
+      event: '견적서 검증 실패',
+      token: pageId,
+      issues: invoice.issues,
+    })
     return {
       ok: false,
       error: { kind: 'validation_failed', issues: invoice.issues },
@@ -217,4 +239,86 @@ export async function getInvoiceByPageId(
   }
 
   return { ok: true, invoice: invoice.data }
+}
+
+/** 캐시에 저장하는 값 (조회 성공 결과만 저장) */
+interface CachedInvoice {
+  invoice: Invoice
+  /** 노션에서 조회한 시각 (밀리초) */
+  fetchedAt: number
+}
+
+/**
+ * 캐시 함수 안에서 실패를 캐시하지 않도록 던지는 예외입니다.
+ * unstable_cache는 예외를 저장하지 않으므로 실패는 다음 요청에서 다시 조회됩니다.
+ * 원인은 private 필드에 둬서 Next.js가 이 예외를 로그로 출력해도 노션 오류 원문이 나오지 않게 합니다.
+ */
+class UncachedFetchFailure extends Error {
+  readonly #fetchError: InvoiceFetchError
+
+  constructor(fetchError: InvoiceFetchError) {
+    super(`견적서 조회 실패 (${fetchError.kind})`)
+    this.name = 'UncachedFetchFailure'
+    this.#fetchError = fetchError
+  }
+
+  get fetchError(): InvoiceFetchError {
+    return this.#fetchError
+  }
+}
+
+/** 노션에서 조회하고, 실패하면 예외를 던져 캐시에 남지 않게 합니다. */
+async function fetchInvoiceForCache(pageId: string): Promise<CachedInvoice> {
+  const result = await fetchInvoiceFromNotion(pageId)
+  if (!result.ok) {
+    throw new UncachedFetchFailure(result.error)
+  }
+  return { invoice: result.invoice, fetchedAt: Date.now() }
+}
+
+/**
+ * 캐시 키용 페이지 ID 해시입니다.
+ * Next.js는 백그라운드 갱신 실패 시 캐시 키를 로그에 출력하므로 전체 토큰 대신 해시를 씁니다.
+ */
+function toCacheKey(pageId: string): string {
+  return createHash('sha256').update(pageId).digest('hex')
+}
+
+/**
+ * 노션 페이지 ID로 견적서를 조회합니다. 성공 결과는 INVOICE_CACHE_TTL_SECONDS 동안 캐시합니다.
+ * not_found / query_failed / validation_failed는 캐시하지 않습니다.
+ * 토큰 형식 검증과 만료 판정은 호출하는 쪽(getAccessibleInvoice)에서 매 요청 수행합니다.
+ */
+export async function getInvoiceByPageId(
+  pageId: string
+): Promise<InvoiceResult> {
+  // 노션 ID 형식이 아니면 캐시와 API를 거치지 않고 바로 not_found
+  if (!isNotionId(pageId)) {
+    return { ok: false, error: { kind: 'not_found' } }
+  }
+
+  const normalizedId = normalizeNotionId(pageId)
+
+  try {
+    const cached = await unstable_cache(
+      () => fetchInvoiceForCache(normalizedId),
+      ['invoice', toCacheKey(normalizedId)],
+      { revalidate: INVOICE_CACHE_TTL_SECONDS }
+    )()
+
+    // unstable_cache는 TTL이 지난 값을 먼저 돌려주고 백그라운드에서 갱신하며,
+    // 갱신이 실패하면(휴지통 이동 등) 지난 값을 계속 돌려줍니다.
+    // TTL을 넘긴 값은 쓰지 않고 직접 다시 조회해 삭제와 수정이 TTL 안에 반영되게 합니다.
+    if (Date.now() - cached.fetchedAt <= INVOICE_CACHE_TTL_SECONDS * 1000) {
+      return { ok: true, invoice: cached.invoice }
+    }
+    return await fetchInvoiceFromNotion(normalizedId)
+  } catch (error) {
+    if (error instanceof UncachedFetchFailure) {
+      return { ok: false, error: error.fetchError }
+    }
+    // 캐시 계층 자체의 예상하지 못한 오류도 조회 실패로 처리 (원문은 응답에 넣지 않음)
+    logFetchError('cache', error, normalizedId)
+    return { ok: false, error: { kind: 'query_failed', cause: error } }
+  }
 }

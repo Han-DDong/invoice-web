@@ -28,7 +28,7 @@ export default function InvoiceError({ error, retry }: InvoiceErrorProps) {
     <StatusCard
       icon={TriangleAlert}
       tone="destructive"
-      title="견적서를 표시하지 못했습니다"
+      title="견적서를 불러오지 못했습니다"
       description="일시적인 오류일 수 있습니다. 잠시 후 다시 시도해 주세요."
     >
       <StatusCardContactNote />
