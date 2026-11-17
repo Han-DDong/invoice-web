@@ -37,7 +37,9 @@ export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
                 key={item.id}
                 className="space-y-3 rounded-xl border bg-card p-5 shadow-xs"
               >
-                <p className="leading-snug font-medium">{item.name}</p>
+                <p className="leading-snug font-medium wrap-anywhere">
+                  {item.name}
+                </p>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-muted-foreground">수량</dt>
                   <dd className="text-right tabular-nums">
@@ -78,7 +80,7 @@ export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
               <TableBody>
                 {items.map(item => (
                   <TableRow key={item.id}>
-                    <TableCell className="px-5 py-4 font-medium">
+                    <TableCell className="px-5 py-4 font-medium wrap-anywhere">
                       {item.name}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right tabular-nums">

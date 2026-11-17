@@ -61,3 +61,28 @@ export async function getAccessibleInvoice(
 
   return { ok: true, invoice: result.invoice }
 }
+
+/** 관리자 조회 결과 (만료 사유가 없음) */
+export type AdminInvoiceResult =
+  | { ok: true; invoice: Invoice }
+  | { ok: false; reason: Exclude<InvoiceAccessDeniedReason, 'expired'> }
+
+/**
+ * 관리자용 견적서 조회입니다. 토큰 형식 검증과 견적서 DB 소속 확인(getInvoiceByPageId)은 공개 경로와 같고,
+ * 만료 판정만 건너뜁니다. 관리자는 만료된 견적서도 볼 수 있어야 합니다.
+ * 반드시 관리자 세션을 확인한 뒤 호출하세요. (이 함수는 인증을 확인하지 않습니다.)
+ */
+export async function getAdminInvoice(id: string): Promise<AdminInvoiceResult> {
+  if (!shareTokenSchema.safeParse(id).success) {
+    return { ok: false, reason: 'invalid' }
+  }
+
+  const result = await getInvoiceByPageId(id)
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.error.kind === 'not_found' ? 'not_found' : 'error',
+    }
+  }
+  return { ok: true, invoice: result.invoice }
+}

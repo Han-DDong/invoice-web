@@ -20,7 +20,7 @@ const mockedRender = vi.mocked(renderToBuffer)
 /** rate limiter 상태가 테스트 사이에 남지 않도록 라우트 모듈을 새로 불러옵니다. */
 async function loadRoute() {
   vi.resetModules()
-  return import('@/app/invoice/[token]/pdf/route')
+  return import('@/app/(site)/invoice/[token]/pdf/route')
 }
 
 function callGet(

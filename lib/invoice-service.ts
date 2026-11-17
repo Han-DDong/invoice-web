@@ -38,7 +38,7 @@ const ITEM_PAGE_SIZE = 100
 type FetchStage = 'page' | 'items' | 'cache'
 
 /** 노션 ID 비교용 정규화 (대시 제거, 소문자) */
-function normalizeNotionId(id: string): string {
+export function normalizeNotionId(id: string): string {
   return id.replace(/-/g, '').toLowerCase()
 }
 
@@ -48,7 +48,7 @@ function isNotionId(id: string): boolean {
 }
 
 /** unknown 값이 객체인지 확인합니다. */
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
@@ -69,39 +69,41 @@ function belongsToDatabase(page: unknown, databaseId: string): boolean {
   )
 }
 
-/** 항목 DB의 data source ID 캐시 (database ID로 1회만 조회) */
-let itemDataSourceIdPromise: Promise<string> | null = null
+/** database ID별 data source ID 캐시 (database ID당 1회만 조회) */
+const dataSourceIdPromises = new Map<string, Promise<string>>()
 
 /**
- * 항목 database ID로 data source ID를 찾아 반환합니다.
- * dataSources.query는 data source ID가 필요하기 때문입니다.
+ * database ID로 data source ID를 찾아 반환합니다.
+ * dataSources.query는 data source ID가 필요하기 때문입니다. (견적서 DB, 항목 DB 공용)
  */
-function resolveItemDataSourceId(databaseId: string): Promise<string> {
-  if (!itemDataSourceIdPromise) {
-    itemDataSourceIdPromise = getNotionClient()
-      .databases.retrieve({ database_id: databaseId })
-      .then(database => {
-        // 부분 응답(PartialDatabaseObjectResponse)에는 data_sources가 없으므로 타입을 좁혀 확인
-        const dataSource =
-          'data_sources' in database ? database.data_sources[0] : undefined
-        if (!dataSource) {
-          throw new Error(
-            '항목 데이터베이스에서 data source를 찾지 못했습니다.'
-          )
-        }
-        return dataSource.id
-      })
-      .catch((error: unknown) => {
-        // 실패한 결과는 캐시하지 않고 다음 요청에서 다시 시도
-        itemDataSourceIdPromise = null
-        throw error
-      })
+export function resolveDataSourceId(databaseId: string): Promise<string> {
+  const cached = dataSourceIdPromises.get(databaseId)
+  if (cached) {
+    return cached
   }
-  return itemDataSourceIdPromise
+
+  const promise = getNotionClient()
+    .databases.retrieve({ database_id: databaseId })
+    .then(database => {
+      // 부분 응답(PartialDatabaseObjectResponse)에는 data_sources가 없으므로 타입을 좁혀 확인
+      const dataSource =
+        'data_sources' in database ? database.data_sources[0] : undefined
+      if (!dataSource) {
+        throw new Error('데이터베이스에서 data source를 찾지 못했습니다.')
+      }
+      return dataSource.id
+    })
+    .catch((error: unknown) => {
+      // 실패한 결과는 캐시하지 않고 다음 요청에서 다시 시도
+      dataSourceIdPromises.delete(databaseId)
+      throw error
+    })
+  dataSourceIdPromises.set(databaseId, promise)
+  return promise
 }
 
 /** 휴지통 / 보관된 페이지인지 확인합니다. (공유 링크에서는 존재하지 않는 것으로 처리) */
-function isTrashed(page: unknown): boolean {
+export function isTrashed(page: unknown): boolean {
   if (!isRecord(page)) {
     return false
   }
@@ -153,7 +155,7 @@ function logFetchError(
 async function fetchItemPages(invoicePageId: string): Promise<unknown[]> {
   const notion = getNotionClient()
   // 환경변수 값은 항목 database ID이며, 조회에는 data source ID를 사용
-  const itemDataSourceId = await resolveItemDataSourceId(
+  const itemDataSourceId = await resolveDataSourceId(
     getServerEnv().NOTION_ITEM_DATABASE_ID
   )
   const pages: unknown[] = []

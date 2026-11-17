@@ -15,7 +15,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // 관리자 영역 응답은 브라우저와 중간 캐시에 저장하지 않음 (Phase 5)
+      {
+        source: '/admin/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
+    ]
   },
 }
 

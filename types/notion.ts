@@ -97,6 +97,9 @@ export const notionRelationSchema = z.object({
 /** 견적서 DB 페이지 */
 export const notionInvoicePageSchema = z.object({
   id: z.string(),
+  // 관리자 대시보드의 최근 활동(생성, 수정 이벤트)에 사용
+  created_time: z.string(),
+  last_edited_time: z.string(),
   properties: z.object({
     [NOTION_INVOICE_PROPERTIES.invoiceNumber]: notionTitleSchema,
     [NOTION_INVOICE_PROPERTIES.issuedAt]: notionDateSchema,
@@ -107,6 +110,11 @@ export const notionInvoicePageSchema = z.object({
     [NOTION_INVOICE_PROPERTIES.clientName]: notionTextLikeSchema,
     [NOTION_INVOICE_PROPERTIES.items]: notionRelationSchema,
   }),
+})
+
+/** 견적 항목의 relation 속성만 읽는 느슨한 스키마 (검증 실패 항목의 소속 견적서 확인용) */
+export const notionItemRelationSchema = z.object({
+  [NOTION_ITEM_PROPERTIES.invoice]: notionRelationSchema,
 })
 
 /** 견적 항목 DB 페이지 */

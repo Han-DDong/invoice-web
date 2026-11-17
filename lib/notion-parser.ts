@@ -2,11 +2,13 @@ import type { z } from 'zod'
 
 import { calculateItemAmount } from '@/lib/invoice-calculations'
 import type { Invoice, InvoiceItem } from '@/types/invoice'
+import type { InvoiceSummary } from '@/types/invoice-list'
 import {
   NOTION_INVOICE_PROPERTIES,
   NOTION_ITEM_PROPERTIES,
   notionInvoicePageSchema,
   notionItemPageSchema,
+  notionItemRelationSchema,
   type notionDateSchema,
   type notionNumberLikeSchema,
   type notionTextLikeSchema,
@@ -152,14 +154,17 @@ export function parseNotionItems(pages: unknown[]): ParseResult<InvoiceItem[]> {
   return issues.length > 0 ? { ok: false, issues } : { ok: true, data: items }
 }
 
+/** 견적서 기본 필드 (항목, 합계 제외) */
+type InvoiceBase = Omit<Invoice, 'items'> & {
+  createdAt: string
+  updatedAt: string
+}
+
 /**
- * 견적서 페이지(unknown)와 변환된 항목으로 Invoice를 만듭니다.
- * 발행일 또는 유효기간이 비어 있으면 검증 실패입니다. (부가세 없음)
+ * 견적서 페이지(unknown)에서 항목을 제외한 기본 필드를 꺼냅니다.
+ * 발행일 또는 유효기간 또는 상태가 비어 있으면 검증 실패입니다.
  */
-export function parseNotionInvoice(
-  page: unknown,
-  items: InvoiceItem[]
-): ParseResult<Invoice> {
+function parseInvoiceBase(page: unknown): ParseResult<InvoiceBase> {
   const result = notionInvoicePageSchema.safeParse(page)
   if (!result.success) {
     return { ok: false, issues: toIssuePaths(result.error, 'invoice') }
@@ -201,7 +206,105 @@ export function parseNotionInvoice(
       clientName: toPlainText(properties[NOTION_INVOICE_PROPERTIES.clientName]),
       issuedAt,
       validUntil,
+      createdAt: result.data.created_time,
+      updatedAt: result.data.last_edited_time,
+    },
+  }
+}
+
+/**
+ * 견적서 페이지(unknown)와 변환된 항목으로 Invoice를 만듭니다.
+ * 발행일 또는 유효기간이 비어 있으면 검증 실패입니다. (부가세 없음)
+ */
+export function parseNotionInvoice(
+  page: unknown,
+  items: InvoiceItem[]
+): ParseResult<Invoice> {
+  const base = parseInvoiceBase(page)
+  if (!base.ok) {
+    return base
+  }
+  // 생성, 수정 시각은 목록 전용이라 Invoice에는 넣지 않음
+  const { id, invoiceNumber, status, clientName, issuedAt, validUntil } =
+    base.data
+  return {
+    ok: true,
+    data: {
+      id,
+      invoiceNumber,
+      status,
+      clientName,
+      issuedAt,
+      validUntil,
       items,
     },
   }
+}
+
+/**
+ * 목록용 견적서 요약(합계 제외)을 만듭니다. 합계는 항목에서 계산해 목록 서비스가 채웁니다.
+ * 노션의 '총 금액' 필드는 사용하지 않습니다.
+ */
+export function parseNotionInvoiceSummary(
+  page: unknown
+): ParseResult<Omit<InvoiceSummary, 'totalAmount'>> {
+  return parseInvoiceBase(page)
+}
+
+/** 목록 합계 계산용 항목 요소 (연결된 견적서 ID와 금액) */
+export interface NotionItemAmount {
+  /** 연결된 견적서 페이지 ID 목록 (원본 그대로) */
+  invoiceIds: string[]
+  /** 수량 x 단가 */
+  amount: number
+}
+
+/** 항목 페이지에서 연결된 견적서 ID와 금액(수량 x 단가)을 꺼냅니다. */
+export function parseNotionItemAmount(
+  page: unknown
+): ParseResult<NotionItemAmount> {
+  const result = notionItemPageSchema.safeParse(page)
+  if (!result.success) {
+    return { ok: false, issues: toIssuePaths(result.error, 'item') }
+  }
+
+  const { properties } = result.data
+  const quantity = toNumber(properties[NOTION_ITEM_PROPERTIES.quantity])
+  const unitPrice = toNumber(properties[NOTION_ITEM_PROPERTIES.unitPrice])
+  if (quantity === null || unitPrice === null) {
+    return {
+      ok: false,
+      issues: [
+        ...(quantity === null
+          ? [`item.properties.${NOTION_ITEM_PROPERTIES.quantity}`]
+          : []),
+        ...(unitPrice === null
+          ? [`item.properties.${NOTION_ITEM_PROPERTIES.unitPrice}`]
+          : []),
+      ],
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      invoiceIds: properties[NOTION_ITEM_PROPERTIES.invoice].relation.map(
+        relation => relation.id
+      ),
+      amount: calculateItemAmount({ quantity, unitPrice }),
+    },
+  }
+}
+
+/** 검증에 실패한 항목이라도 연결된 견적서 ID는 읽을 수 있으면 반환합니다. (영향받는 견적서를 목록에서 제외하기 위함) */
+export function extractItemInvoiceIds(page: unknown): string[] {
+  if (typeof page !== 'object' || page === null || !('properties' in page)) {
+    return []
+  }
+  const parsed = notionItemRelationSchema.safeParse(page.properties)
+  return parsed.success
+    ? parsed.data[NOTION_ITEM_PROPERTIES.invoice].relation.map(
+        relation => relation.id
+      )
+    : []
 }

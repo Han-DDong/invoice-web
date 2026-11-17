@@ -28,6 +28,8 @@ interface InvoicePageOptions {
   clientName?: string
   inTrash?: boolean
   archived?: boolean
+  createdTime?: string
+  lastEditedTime?: string
 }
 
 /** 견적서 DB 페이지 응답 */
@@ -41,10 +43,14 @@ export function buildInvoicePage({
   clientName = '테스트 클라이언트',
   inTrash = false,
   archived = false,
+  createdTime = '2026-11-03T01:00:00.000Z',
+  lastEditedTime = '2026-11-03T01:00:00.000Z',
 }: InvoicePageOptions = {}) {
   return {
     object: 'page',
     id,
+    created_time: createdTime,
+    last_edited_time: lastEditedTime,
     in_trash: inTrash,
     archived,
     parent: { type: 'database_id', database_id: databaseId },
@@ -70,6 +76,8 @@ interface ItemPageOptions {
   unitPrice?: number | null
   /** 노션 Formula 금액 (웹에서는 무시해야 함) */
   amount?: number | null
+  /** 연결된 견적서 페이지 ID 목록 */
+  invoiceIds?: string[]
 }
 
 /** 견적 항목 DB 페이지 응답 */
@@ -79,13 +87,17 @@ export function buildItemPage({
   quantity = 1,
   unitPrice = 1000,
   amount = 1,
+  invoiceIds = [TEST_PAGE_ID],
 }: ItemPageOptions = {}) {
   return {
     object: 'page',
     id,
     properties: {
       항목명: { type: 'title', title: text(name) },
-      Invoice: { type: 'relation', relation: [{ id: TEST_PAGE_ID }] },
+      Invoice: {
+        type: 'relation',
+        relation: invoiceIds.map(invoiceId => ({ id: invoiceId })),
+      },
       금액: { type: 'formula', formula: { type: 'number', number: amount } },
       단가: { type: 'number', number: unitPrice },
       수량: { type: 'number', number: quantity },

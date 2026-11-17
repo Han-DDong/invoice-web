@@ -8,11 +8,12 @@ import { isNotionClientError, type Logger } from '@notionhq/client'
 // 남기지 않는 값: 오류 객체 원문과 message, 노션 응답 본문, 요청 헤더, API 키, DB ID, 전체 토큰
 
 /** 로그를 남기는 모듈 */
-export type LogScope = 'invoice-service' | 'pdf-route' | 'notion-sdk'
+export type LogScope =
+  'invoice-service' | 'invoice-list' | 'pdf-route' | 'notion-sdk' | 'admin-auth'
 
 /** 로그를 남기는 단계 */
 export type LogStage =
-  'page' | 'items' | 'validation' | 'render' | 'cache' | 'request'
+  'page' | 'items' | 'validation' | 'render' | 'cache' | 'request' | 'auth'
 
 /** 로그에 남길 수 있는 값 */
 interface ServerLogEntry {

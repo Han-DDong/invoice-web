@@ -20,7 +20,7 @@ export function InvoiceClientInfo({ invoice }: InvoiceClientInfoProps) {
           <dt className="text-xs font-medium text-muted-foreground">
             {field.label}
           </dt>
-          <dd className="font-medium">{field.value}</dd>
+          <dd className="font-medium wrap-anywhere">{field.value}</dd>
         </div>
       ))}
     </dl>
