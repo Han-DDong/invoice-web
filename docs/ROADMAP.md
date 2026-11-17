@@ -1,14 +1,14 @@
-# 노션 기반 견적서 관리 시스템 MVP 개발 로드맵
+# 노션 기반 견적서 관리 시스템 고도화 개발 로드맵
 
-노션을 데이터베이스로 활용하여 견적서를 관리하고, 클라이언트가 웹에서 조회 및 PDF 다운로드할 수 있는 시스템
+노션을 데이터베이스로 활용한 견적서 관리 시스템의 고도화를 통해 관리자 경험과 사용자 편의성을 획기적으로 개선
 
 ## 개요
 
-노션 기반 견적서 관리 시스템 MVP는 프리랜서와 소규모 기업을 위한 간단하고 효율적인 견적서 관리 솔루션으로 다음 기능을 제공합니다:
+노션 기반 견적서 관리 시스템 고도화 프로젝트는 완성된 MVP를 기반으로 관리자와 클라이언트 모두에게 향상된 경험을 제공하는 고급 기능들을 추가합니다:
 
-- **노션 데이터베이스 연동**: Notion API를 통한 실시간 견적서 데이터 조회
-- **견적서 웹 조회**: 고유 URL을 통한 견적서 내용 확인
-- **PDF 다운로드**: 견적서를 PDF 파일로 변환하여 저장 및 인쇄
+- **관리자 대시보드**: 발행한 모든 견적서를 한눈에 관리할 수 있는 통합 대시보드
+- **링크 복사 기능**: 클라이언트에게 전달할 견적서 링크를 쉽고 빠르게 공유
+- **다크모드 지원**: 사용자 선호에 따른 테마 전환으로 향상된 사용자 경험
 
 ## 개발 워크플로우
 
@@ -20,18 +20,19 @@
 2. **작업 생성**
    - 기존 코드베이스를 학습하고 현재 상태를 파악
    - `/tasks` 디렉토리에 새 작업 파일 생성
-   - 명명 형식: `XXX-description.md` (예: `001-setup.md`)
+   - 명명 형식: `XXX-description.md` (예: `013-admin-dashboard.md`)
    - 고수준 명세서, 관련 파일, 수락 기준, 구현 단계 포함
-   - 예시를 위해 `/tasks` 디렉토리의 마지막 완료된 작업 참조
-   - API/비즈니스 로직 작업 시 "## 테스트 체크리스트" 섹션 필수 포함 (Playwright MCP 테스트 시나리오 작성)
+   - **API/비즈니스 로직 작업 시 "## 테스트 체크리스트" 섹션 필수 포함 (Playwright MCP 테스트 시나리오 작성)**
+   - 예시를 위해 `/tasks` 디렉토리의 마지막 완료된 작업 참조. 예를 들어, 현재 작업이 `015`라면 `014`와 `013`을 예시로 참조.
+   - 이러한 예시들은 완료된 작업이므로 내용이 완료된 작업의 최종 상태를 반영함 (체크된 박스와 변경 사항 요약). 새 작업의 경우, 문서에는 빈 박스와 변경 사항 요약이 없어야 함. 초기 상태의 샘플로 `000-sample.md` 참조.
 
 3. **작업 구현**
    - 작업 파일의 명세서를 따름
    - 기능과 기능성 구현
-   - API 연동 및 비즈니스 로직 구현 시 Playwright MCP 테스트 필수
+   - **API 연동 및 비즈니스 로직 구현 시 Playwright MCP로 테스트 수행 필수**
+   - 각 단계 후 작업 파일 내 단계 진행 상황 업데이트
    - 구현 완료 후 Playwright MCP를 사용한 E2E 테스트 실행
    - 테스트 통과 확인 후 다음 단계로 진행
-   - 각 단계 후 작업 파일 내 단계 진행 상황 업데이트
    - 각 단계 완료 후 중단하고 추가 지시를 기다림
 
 4. **로드맵 업데이트**
@@ -39,465 +40,353 @@
 
 ## 개발 단계
 
-### Phase 1: 애플리케이션 골격 구축 ✅
+### Phase 5: 관리자 기능 구축
 
-- **Task 001: 프로젝트 초기 설정 및 환경 구성** ✅ - 완료 ([작업 파일](../tasks/001-project-setup.md))
-  - ✅ Next.js 16 프로젝트 기본 구조 검증
-  - ✅ 환경 변수 스키마 검증 (`lib/env.ts`, `.env.example`, 3개 변수, `.env.local`은 직접 생성)
-  - ✅ TypeScript 및 ESLint 설정 확인
-  - ✅ Notion API 연동을 위한 환경 구성
+- **Task 013: 관리자 레이아웃 및 인증 시스템 구현** - 우선순위
+  - 관리자 전용 레이아웃 컴포넌트 생성
+  - 간단한 인증 시스템 구현 (환경변수 기반 패스워드)
+  - 관리자 세션 관리 및 보호된 라우트 설정
+  - 관리자 네비게이션 바 및 사이드바 구현
 
-- **Task 002: 라우팅 구조 및 페이지 골격 생성** ✅ - 완료 ([작업 파일](../tasks/002-routing-skeleton.md))
-  - ✅ App Router 기반 라우트 구조 구현 (/invoice/[token], 토큰은 노션 페이지 ID)
-  - ✅ 견적서 조회 페이지 골격 생성
-  - ✅ 로딩(loading), 에러(error), 404(not-found) 화면 생성
-  - ✅ 접근 불가 페이지(/unavailable)와 공통 `StatusCard`
-  - ✅ 기본 레이아웃 컴포넌트 설정
+- **Task 014: 견적서 목록 페이지 구현**
+  - Notion API를 통한 모든 견적서 데이터 조회
+  - 테이블 형태의 견적서 목록 UI 구현
+  - 견적서 상태, 클라이언트명, 발행일, 총액 표시
+  - 페이지네이션 및 정렬 기능 구현
 
-- **Task 003: 타입 정의 및 데이터 모델 설계** ✅ - 완료 ([작업 파일](../tasks/003-types-and-models.md))
-  - ✅ 견적서 도메인 타입 정의 (실제 노션 DB 기준, 부가세 없음)
-  - ✅ Notion API 응답 Zod 스키마 정의
-  - ✅ PDF 생성 관련 타입 정의
-  - ✅ 에러 핸들링 타입 정의 (`InvoiceFetchError`)
-  - ✅ 합계 계산 유틸 (`calculateInvoiceTotals`)
+- **Task 015: 검색 및 필터링 기능 구현**
+  - 클라이언트명, 견적서 번호 검색 기능
+  - 상태별 필터링 (대기/승인/거절)
+  - 날짜 범위 필터링
+  - 검색 결과 하이라이팅
 
-### Phase 2: UI/UX 완성 (더미 데이터 활용) ✅
+### Phase 6: 링크 관리 기능
 
-- **Task 004: 공통 컴포넌트 라이브러리 구축** ✅ - 완료 ([작업 파일](../tasks/004-common-components.md))
-  - ✅ shadcn/ui 설정 점검 (new-york 스타일) 및 필요한 컴포넌트 추가 (Button, Card, Table, Badge 등)
-  - ✅ 노션 CSV 예시 기준 더미 견적서 데이터 작성 (`types/invoice.ts`의 `Invoice`, `InvoiceItem` 타입 준수, 부가세 없음)
-  - ✅ 더미 데이터 합계는 `calculateInvoiceTotals`로 계산 (합계 = 항목 금액 합계)
-  - ✅ 디자인 시스템 토큰 점검 (색상, 타이포그래피)
+- **Task 016: 고유 링크 생성 및 표시 시스템** - 우선순위
+  - 각 견적서별 고유 URL 자동 생성 로직
+  - 견적서 목록에 링크 컬럼 추가
+  - 짧은 URL 형식 지원 (선택사항)
+  - QR 코드 생성 기능 (선택사항)
 
-- **Task 005: 견적서 조회 페이지 UI 구현** ✅ - 완료 ([작업 파일](../tasks/005-invoice-view-ui.md))
-  - ✅ 견적서 헤더 컴포넌트 (견적서 번호, 발행일, 유효기간, 상태 배지: 대기/승인/거절)
-  - ✅ 클라이언트 정보 섹션
-  - ✅ 견적 항목 테이블 컴포넌트 (항목명, 수량, 단가, 금액)
-  - ✅ 합계 요약 섹션 (항목 금액 합계, 부가세 없음)
-  - ✅ PDF 다운로드 버튼 UI
-  - ✅ 반응형 레이아웃 구현 (모바일/태블릿/데스크톱)
+- **Task 017: 원클릭 링크 복사 기능**
+  - 복사 버튼 컴포넌트 개발
+  - 클립보드 API 활용한 복사 기능
+  - 복사 성공/실패 토스트 알림
+  - 복사 버튼 호버 효과 및 툴팁
 
-- **Task 006: 에러 및 로딩 상태 UI 구현** ✅ - 완료 ([작업 파일](../tasks/006-error-loading-ui.md))
-  - ✅ Phase 1에서 만든 404, 접근 불가(`StatusCard`) 화면 디자인 고도화
-  - ✅ 견적서 상세 레이아웃에 맞춘 로딩 스켈레톤 컴포넌트
-  - ✅ 에러 메시지 컴포넌트
-  - ✅ 빈 상태(Empty state) 컴포넌트 (견적 항목 0건 등)
+- **Task 018: 링크 공유 통합 기능**
+  - 이메일로 링크 전송 기능 (mailto 링크)
+  - 카카오톡, 텔레그램 등 메신저 공유 버튼
+  - 링크 미리보기 메타데이터 설정
+  - 링크 통계 추적 (조회수 등)
 
-### Phase 3: 핵심 기능 구현 ✅
+### Phase 7: 다크모드 구현
 
-- **Task 007: Notion API 통합 구현** ✅ - 완료 ([작업 파일](../tasks/007-notion-api-integration.md))
-  - ✅ Notion API 클라이언트 설정 (`@notionhq/client`, 환경변수 3개 사용)
-  - ✅ 견적서 데이터 조회 서비스 구현 (노션 페이지 ID 기반 단건 조회)
-  - ✅ 견적 항목 데이터 조회 로직 (`NOTION_ITEM_DATABASE_ID` 기준 관계 항목 조회)
-  - ✅ 에러 핸들링 및 재시도 로직 (`InvoiceFetchError` 활용)
-  - ✅ Zod 스키마 기반 데이터 변환 및 정규화 유틸리티
-  - ✅ Playwright MCP를 활용한 조회 플로우 통합 테스트
+- **Task 019: 다크모드 테마 시스템 구축** - 우선순위
+  - next-themes 라이브러리 설정
+  - 다크모드 색상 팔레트 정의
+  - CSS 변수 기반 테마 토큰 설정
+  - 시스템 설정 자동 감지 로직
 
-- **Task 008: 견적서 데이터 페칭 및 렌더링** ✅ - 완료 ([작업 파일](../tasks/008-invoice-data-rendering.md))
-  - ✅ Server Component에서 Notion 데이터 페칭
-  - ✅ 더미 데이터를 실제 노션 데이터로 교체
-  - ✅ 동적 라우팅 파라미터(`/invoice/[token]`, 토큰 = 노션 페이지 ID) 처리
-  - ✅ 데이터 유효성 검증 및 존재하지 않는 견적서 처리 (F011)
-  - ✅ 노션 데이터 최신 상태 반영 (캐시 없이 항상 최신 조회, 캐싱은 Task 010)
-  - ✅ Playwright MCP로 데이터 렌더링 E2E 테스트 (만료 실데이터는 미확인)
+- **Task 020: UI 컴포넌트 다크모드 스타일링**
+  - shadcn/ui 컴포넌트 다크모드 스타일 적용
+  - 견적서 조회 페이지 다크모드 대응
+  - 관리자 대시보드 다크모드 스타일
+  - PDF 미리보기 다크모드 처리
 
-- **Task 009: PDF 생성 및 다운로드 기능** ✅ - 완료, 009-A(폰트·템플릿)와 009-B(라우트·버튼)로 분할 ([작업 파일](../tasks/009-pdf-generation.md))
-  - ✅ @react-pdf/renderer 설치 및 설정
-  - ✅ PDF 템플릿 컴포넌트 개발 (`types/pdf.ts` 타입 활용, 009-A)
-  - ✅ Route Handler 구현 (`app/invoice/[token]/pdf/route.ts`, 009-B)
-  - ✅ PDF 다운로드 트리거 로직
-  - ✅ 한글 폰트 지원 설정 (Noto Sans KR OTF, `assets/fonts`, 009-A)
-  - ✅ Playwright MCP로 PDF 생성 플로우 테스트
+- **Task 021: 다크모드 토글 및 사용자 설정**
+  - 테마 토글 버튼 컴포넌트 개발
+  - 로컬 스토리지에 사용자 설정 저장
+  - 부드러운 테마 전환 애니메이션
+  - 다크모드 설정 페이지 (선택사항)
 
-- **Task 009-1: 핵심 기능 통합 테스트** ✅ - 완료, 일부 시나리오 미확인 ([작업 파일](../tasks/009-1-core-integration-test.md))
-  - ✅ Playwright MCP를 사용한 전체 사용자 플로우 테스트
-  - ✅ API 연동 및 비즈니스 로직 검증
-  - ✅ 에러 핸들링 및 엣지 케이스 테스트 (만료 410, 항목 0건 실데이터는 미확인)
-  - ✅ 데이터 무결성 및 일관성 검증 (합계 = 항목 금액 합계)
-  - ✅ 성능 및 응답 시간 테스트
+### Phase 8: 통합 및 최적화
 
-### Phase 4: 고급 기능 및 최적화 ✅
+- **Task 022: 고도화 기능 통합 테스트**
+  - Playwright MCP를 활용한 관리자 플로우 E2E 테스트
+  - 링크 복사 및 공유 기능 테스트
+  - 다크모드 전환 테스트
+  - 크로스 브라우저 호환성 테스트
 
-실행 순서: 010-A → 011-A → 011-B → 010-B → 012-A → 012-B. 결정 사항은 각 작업 파일 상단에 기록했습니다. (2026-11-16)
+- **Task 023: 성능 최적화 및 보안 강화**
+  - 관리자 페이지 레이지 로딩
+  - 대량 데이터 처리 최적화
+  - 관리자 인증 보안 강화
+  - API 호출 최적화 및 캐싱 전략
 
-- **Task 010: 성능 최적화 및 캐싱** ✅ - 완료, 010-A, 010-B로 분할 ([작업 파일](../tasks/010-performance-caching.md))
-  - **010-A: 노션 호출 최적화와 캐싱** ✅
-    - ✅ `getInvoiceByPageId` 결과(`Invoice`)를 서비스 계층에서 `unstable_cache`로 30초 캐시 (TTL 지난 stale 값은 쓰지 않고 재조회)
-    - ✅ 성공 결과만 캐시, not_found / query_failed / validation_failed는 캐시 안 함
-    - ✅ 토큰 형식 검증과 만료 판정(`isInvoiceExpired`)은 캐시 밖에서 매 요청 수행
-    - ✅ `lib/notion.ts`의 `cache: 'no-store'` 유지
-    - ✅ 화면 → PDF 요청 시 노션 호출 4회 → 2회(TTL 안 두 번째 요청 0회), 전후 측정 기록 (노션 값 변경 반영 지연은 미확인)
-  - **010-B: 폰트 subset과 렌더링 최적화 검토** ✅
-    - ✅ Noto Sans KR OTF 2개(합계 9,460,792B) 측정, subset은 글자 누락 위험으로 **미적용** (PDF에는 이미 사용 글자만 임베드되어 67KB, 이후 PDF 생성 약 0.03s)
-    - ✅ React Suspense 경계 검토: `loading.tsx`와 중복이므로 현행 유지
-    - ✅ 이미지 최적화: 해당 없음 (`next/image`, `<img>` 사용처와 `public/` 폴더 없음)
-
-- **Task 011: 보안 및 에러 처리 강화** ✅ - 완료, 011-A, 011-B로 분할 ([작업 파일](../tasks/011-security-error-handling.md))
-  - **011-A: 서버 로거와 에러 화면** ✅
-    - ✅ `lib/logger.ts`(server-only, JSON 한 줄)로 노션 오류 객체 직접 출력 대체 (code, status, stage, 토큰 앞 6자만)
-    - ✅ 교체 지점: `lib/invoice-service.ts`의 `logFetchError`와 검증 실패 로그 2곳, PDF 라우트 1곳 (+ 노션 SDK 내부 로거 대체)
-    - ✅ `app/global-error.tsx` 추가 (루트 레이아웃 오류 처리, OS 다크 모드)
-    - ✅ 404/500 문구 일관화
-  - **011-B: 보안 헤더와 rate limiting** ✅
-    - ✅ `next.config.ts` `headers()`: `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`
-    - ✅ PDF Route Handler 내부에서 `/invoice/[token]/pdf`만 인메모리 IP 제한 (1분 10회, 429, Retry-After), `proxy.ts`는 공식 문서의 전역 상태 의존 금지 안내로 미사용, 한계 README 명시
-    - ✅ CORS: 교차 출처 API가 없으므로 허용 헤더를 추가하지 않는 정책 문서화
-    - ✅ API 키 보안 재확인 (응답, 429 본문, 로그에서 키·DB ID 0회)
-    - CSP(`frame-ancestors` 포함)와 rate limit 외부 저장소는 도입하지 않음 (후속 과제)
-
-- **Task 012: 테스트 및 배포 준비** ✅ - 완료 (브라우저 수동 체크는 미확인), 012-A, 012-B로 분할 ([작업 파일](../tasks/012-testing-deployment.md))
-  - **012-A: 테스트 러너 도입과 핵심 로직 테스트** ✅
-    - ✅ Vitest 도입 (`server-only` 빈 모듈 별칭, `@` 별칭은 Vite 내장 `resolve.tsconfigPaths`, `check-all`에 포함)
-    - ✅ 순수 함수 테스트 (`invoice-calculations`, `notion-parser`, `isInvoiceExpired`, `shareTokenSchema`, `toSafeFileName`)
-    - ✅ `getNotionClient` 모킹 기반 `getInvoiceByPageId` 테스트 (항목 0건, 100건 초과 페이지네이션, 다른 DB 페이지, 휴지통, 캐시)
-    - ✅ PDF 라우트 상태코드 매핑 테스트 (404 / 410 / 500 / 200 / 429)
-    - ✅ Task 009-1 미확인 3건(만료 410, 항목 0건, 100건 초과) 모킹 테스트로 해소 (실데이터 확인 아님)
-  - **012-B: 배포 준비** ✅ - Vercel 배포 확인 완료, 브라우저 수동 체크는 미확인
-    - ✅ Vercel 배포 설정 점검 (자동 감지, `vercel.json` 불필요, 빌드에 노션 키 불필요)
-    - ✅ 환경변수 3개와 환경별 설정 관리 (dev/preview/prod) README 문서화
-    - ✅ `assets/fonts` 번들 포함: Vercel 배포에서 PDF 한글 정상 확인 (사용자 육안, 2026-11-16)
-    - ✅ Vercel 배포 curl 확인: 보안 헤더 3개, 404, PDF 429(14회 중 10회 이후), 화면·PDF 200
-    - ✅ Chromium 외 브라우저 PDF 수동 체크리스트: README에 작성, 사용자가 Phase 4 전체 완료로 확인 (2026-11-16, 브라우저별 결과 기록은 없음)
-    - ✅ CI(`.github/workflows`)는 만들지 않음 (후속 과제)
-    - ✅ ROADMAP Phase 4 완료 표시
+- **Task 024: 문서화 및 배포 준비**
+  - 관리자 사용 가이드 작성
+  - API 문서 업데이트
+  - 환경별 설정 관리 강화
+  - 프로덕션 배포 체크리스트 작성
 
 ## 작업별 상세 구현 사항
 
-### Task 001: 프로젝트 초기 설정 및 환경 구성
-
-**예상 소요 시간**: 2-3시간
-
-**구현 내용**:
-
-- `.env.local` 파일에 환경 변수 설정 (비밀값이므로 직접 생성)
-  ```env
-  NOTION_API_KEY=secret_xxxxxxxxxxxxx
-  NOTION_INVOICE_DATABASE_ID=xxxxxxxxxxxxx
-  NOTION_ITEM_DATABASE_ID=xxxxxxxxxxxxx
-  ```
-  (`NOTION_DATABASE_ID`는 폐기된 설계)
-- `lib/env.ts`의 환경변수 스키마 검증
-- TypeScript 설정 검증 (`tsconfig.json`)
-- ESLint 설정 확인
-
-**완료 기준**:
-
-- ✅ 환경 변수 3개가 `lib/env.ts`, `.env.example`, README에서 일치함
-- ✅ 모든 의존성이 설치되고 버전이 일치함 (Next.js 16, @notionhq/client 5)
-- ✅ 개발 서버가 정상 실행됨 (`npm run dev`)
-- ✅ 린트 및 타입 체크 통과
-- ✅ Shrimp Task Manager MCP 서버 통합 완료
-
-### Task 002: 라우팅 구조 및 페이지 골격 생성
-
-**예상 소요 시간**: 3-4시간
-
-**구현 내용**:
-
-- `app/invoice/[token]/page.tsx` (토큰 형식 검증, 노션 조회는 Task 007~008에서 구현)
-- `app/invoice/[token]/loading.tsx` 스켈레톤
-- `app/invoice/[token]/error.tsx` 에러 경계
-- `app/not-found.tsx` 커스텀 404 페이지
-- `app/unavailable/page.tsx` 접근 불가 안내
-- `components/layout/status-card.tsx` 공통 안내 카드
-
-**완료 기준**:
-
-- ✅ 동적 라우팅이 정상 작동함 (/invoice/[token] 구조 구현)
-- ✅ 형식이 잘못된 토큰은 /unavailable?reason=invalid로 이동함
-- ✅ 404 페이지가 올바르게 표시됨 (커스텀 not-found.tsx 구현)
-- ✅ 에러 화면이 에러 원문을 노출하지 않음
-- ✅ 모바일, 데스크톱 뷰포트에서 레이아웃이 깨지지 않음
-
-### Task 003: 타입 정의 및 데이터 모델 설계
-
-**예상 소요 시간**: 2-3시간
-
-**구현 내용**:
-
-- `types/invoice.ts` - 견적서 도메인 타입 (`Invoice`, `InvoiceItem`, `InvoiceStatus`, `InvoiceTotals`)
-- `types/notion.ts` - Notion API 응답 Zod 스키마
-- `types/pdf.ts` - PDF 생성 관련 타입
-- `types/invoice-error.ts` - 노션 조회 실패 타입과 접근 불가 사유 변환
-- `lib/constants.ts` - 상수 정의
-- `lib/invoice-calculations.ts` - 항목 금액과 합계 계산
-
-**설계 결정** (실제 노션 DB 기준):
-
-- 부가세 없음, 합계 = 항목 금액 합계
-- 공유토큰 없음, URL 토큰 = 노션 페이지 ID
-- 상태는 노션 값(대기/승인/거절) 그대로 사용
-
-**완료 기준**:
-
-- ✅ 모든 데이터 모델이 타입으로 정의됨 (Invoice, InvoiceItem, InvoiceTotals)
-- ✅ Notion API 응답이 Zod 스키마로 정의됨 (견적서, 견적 항목 페이지)
-- ✅ TypeScript 컴파일 에러가 없음, `any` 사용 없음
-- ✅ 항목 금액은 수량 x 단가로 재계산됨 (CSV 예시 합계 60,000,000 일치)
-
-### Task 007: Notion API 통합 구현
+### Task 013: 관리자 레이아웃 및 인증 시스템 구현
 
 **예상 소요 시간**: 4-5시간
 
 **구현 내용**:
 
-- `lib/notion.ts` - Notion 클라이언트 초기화
-- `lib/invoice-service.ts` - 견적서 데이터 서비스 (`getInvoiceByPageId`)
-- `lib/notion-parser.ts` - Notion 데이터 파싱 유틸리티
-- `lib/invoice-access.ts` - 접근 판정 (토큰 형식, 조회, 유효기간)
-- API 에러 핸들링 및 재시도 로직
-- 데이터 변환 및 검증 로직
+- `/app/admin/layout.tsx` - 관리자 전용 레이아웃
+- `/app/admin/login/page.tsx` - 로그인 페이지
+- `/middleware.ts` - 인증 미들웨어
+- `/lib/auth/session.ts` - 세션 관리 유틸리티
+- `/components/admin/AdminNav.tsx` - 관리자 네비게이션
 
 **완료 기준**:
 
-- [x] Notion API 연결이 성공함
-- [x] 노션 페이지 ID로 견적서 데이터를 정상적으로 조회함
-- [x] 데이터가 Zod 스키마 검증 후 도메인 타입으로 변환됨
-- [x] 에러 처리가 적절히 구현됨 (`InvoiceFetchError` 사유별 처리)
+- 관리자 전용 레이아웃이 일반 사용자 레이아웃과 구분됨
+- 환경변수 기반 간단한 패스워드 인증이 작동함
+- 보호된 라우트에 미인증 접근 시 로그인 페이지로 리다이렉트
+- 관리자 네비게이션에서 주요 메뉴 접근 가능
 
-### Task 009: PDF 생성 및 다운로드 기능
+### Task 014: 견적서 목록 페이지 구현
 
 **예상 소요 시간**: 5-6시간
 
 **구현 내용**:
 
-- `components/pdf/invoice-template.tsx` - PDF 템플릿
-- `app/invoice/[token]/pdf/route.ts` - PDF 생성 Route Handler
-- `lib/pdf/fonts.ts` - 한글 폰트 등록 (`assets/fonts`의 Noto Sans KR)
-- 한글 폰트 설정 및 스타일링
-- 다운로드 트리거 및 파일명 설정
+- `/app/admin/invoices/page.tsx` - 견적서 목록 페이지
+- `/lib/services/invoice-list.service.ts` - 목록 조회 서비스
+- `/components/admin/InvoiceTable.tsx` - 견적서 테이블 컴포넌트
+- `/components/admin/StatusBadge.tsx` - 상태 표시 배지
+- 페이지네이션 및 정렬 로직
 
 **완료 기준**:
 
-- [x] PDF가 정상적으로 생성됨
-- [x] 한글이 올바르게 표시됨
-- [x] 레이아웃이 견적서 형식에 맞음 (합계 = 항목 금액 합계, 부가세 없음)
-- [ ] 다운로드가 모든 브라우저에서 작동함 (Chromium만 확인, 그 외 미확인 → Task 012-B 수동 체크리스트)
+- Notion 데이터베이스의 모든 견적서가 목록에 표시됨
+- 테이블에 견적서 번호, 클라이언트명, 발행일, 상태, 총액이 표시됨
+- 페이지네이션이 정상 작동함 (10개씩 표시)
+- 각 컬럼별 정렬이 가능함
 
-### Task 010-A: 노션 호출 최적화와 캐싱
+### Task 015: 검색 및 필터링 기능 구현
+
+**예상 소요 시간**: 4-5시간
 
 **구현 내용**:
 
-- `lib/invoice-service.ts` - `getInvoiceByPageId` 결과를 서비스 계층에서 캐시 (성공 결과만, 키는 페이지 ID)
-- `lib/invoice-access.ts` - 토큰 형식 검증과 `isInvoiceExpired`는 캐시 밖에서 매 요청 수행 (변경 없음 원칙)
-- `lib/notion.ts` - `cache: 'no-store'` 유지
-- 근거: `node_modules/next/dist/docs/01-app/02-guides/caching-without-cache-components.md`, `unstable_cache.md`
-
-**결정**: 캐시 TTL 30초, 캐시 방식 `unstable_cache` (2026-11-16)
+- `/components/admin/SearchBar.tsx` - 검색 입력 컴포넌트
+- `/components/admin/FilterPanel.tsx` - 필터 패널 컴포넌트
+- `/lib/utils/search-filter.ts` - 검색 및 필터링 유틸리티
+- URL 쿼리 파라미터 기반 상태 관리
+- 디바운싱 처리된 검색 로직
 
 **완료 기준**:
 
-- [x] TTL 안에서 화면 → PDF 두 번째 요청은 노션을 호출하지 않음
-- [x] 조회 실패는 캐시되지 않음
-- [x] 만료 판정은 매 요청 KST 오늘 기준 (코드 구조로 확인, 실데이터 만료는 012-A 테스트)
-- [x] 전후 노션 호출 횟수와 응답 시간 기록
+- 클라이언트명, 견적서 번호로 실시간 검색 가능
+- 상태별 필터링이 작동함 (대기/승인/거절)
+- 날짜 범위 선택으로 기간별 필터링 가능
+- 검색어가 하이라이팅되어 표시됨
 
-### Task 011-A: 서버 로거와 에러 화면
+### Task 016: 고유 링크 생성 및 표시 시스템
+
+**예상 소요 시간**: 3-4시간
 
 **구현 내용**:
 
-- `lib/logger.ts` - 서버 전용 로거 (code, status, stage, 토큰 일부만 기록)
-- `lib/invoice-service.ts`, `app/invoice/[token]/pdf/route.ts` - 로그 교체 4곳
-- `app/global-error.tsx` - 자체 `<html>`, `<body>`를 갖는 전역 에러 UI (`'use client'`, `retry`)
-- 404/500 문구 일관화 (`app/not-found.tsx`, `app/invoice/[token]/error.tsx`, `app/unavailable/page.tsx`, PDF 응답 본문)
-- 근거: `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md`
+- `/lib/utils/link-generator.ts` - 링크 생성 유틸리티
+- `/components/admin/LinkColumn.tsx` - 링크 표시 컬럼 컴포넌트
+- 견적서 테이블에 링크 컬럼 추가
+- 짧은 URL 형식 옵션 (선택사항)
+- QR 코드 생성 라이브러리 연동 (선택사항)
 
 **완료 기준**:
 
-- [x] 서버 로그에 오류 객체 원문, 키, DB ID, 전체 토큰이 없음
-- [x] 루트 레이아웃 오류 시 `global-error` 화면이 오류 원문 없이 표시됨
-- [x] 404/500 문구가 화면과 PDF 응답에서 일관됨
+- 각 견적서의 고유 URL이 자동 생성됨
+- 견적서 목록에서 링크가 표시됨
+- 링크 클릭 시 새 탭에서 견적서 페이지가 열림
+- (선택) QR 코드 생성 및 다운로드 가능
 
-### Task 011-B: 보안 헤더와 rate limiting
+### Task 017: 원클릭 링크 복사 기능
+
+**예상 소요 시간**: 3-4시간
 
 **구현 내용**:
 
-- `next.config.ts` - `headers()`로 Referrer-Policy, X-Content-Type-Options, 프레이밍 차단
-- `lib/rate-limit.ts`, `app/invoice/[token]/pdf/route.ts` - PDF 경로 인메모리 IP 제한 (429, Retry-After)
-- CORS 허용 헤더 미추가 정책 문서화
-- 근거: `proxy.md`(Proxy는 전역 상태에 의존하지 말 것, 기본 Node.js 런타임), `content-security-policy.md`, `headers.md`
-
-**결정**: CSP 미도입, 외부 저장소 미도입, 구현 위치 Route Handler, IP당 1분 10회 (2026-11-16)
+- `/components/admin/CopyButton.tsx` - 복사 버튼 컴포넌트
+- `/hooks/useClipboard.ts` - 클립보드 커스텀 훅
+- `/components/ui/toast.tsx` - 토스트 알림 컴포넌트
+- 복사 성공/실패 피드백 애니메이션
+- 브라우저 호환성 처리
 
 **완료 기준**:
 
-- [x] 모든 응답에 보안 헤더 포함
-- [x] PDF 경로 제한 초과 시 429 + Retry-After
-- [x] 인메모리 제한의 한계와 CORS 정책 문서화
+- 복사 버튼 클릭 시 링크가 클립보드에 복사됨
+- 복사 성공 시 토스트 알림이 표시됨
+- 복사 실패 시 적절한 에러 메시지 표시
+- 모든 주요 브라우저에서 작동함
 
-### Task 010-B: 폰트 subset과 렌더링 최적화 검토
+### Task 019: 다크모드 테마 시스템 구축
+
+**예상 소요 시간**: 4-5시간
 
 **구현 내용**:
 
-- `assets/fonts/`, `lib/pdf/fonts.ts` - subset 적용 시에만 변경 (KS X 1001 2350자 + 영문·숫자·기호, 일회성 스크립트, npm 의존성 추가 금지)
-- Suspense 경계 검토: `app/invoice/[token]/loading.tsx`와 중복이면 현행 유지
-- 이미지 최적화: 해당 없음 (`next/image`, `<img>` 사용처와 `public/` 폴더 없음)
-
-**결정**: 폰트 subset 미적용 (측정만, 2026-11-16)
+- `next-themes` 라이브러리 설치 및 설정
+- `/app/providers.tsx` - 테마 프로바이더 설정
+- `/styles/themes.css` - 다크모드 CSS 변수 정의
+- TailwindCSS dark: 클래스 설정
+- 시스템 테마 감지 로직
 
 **완료 기준**:
 
-- [x] subset 적용 여부 결정과 사유 기록
-- [ ] (적용 시) PDF 한글·숫자·기호 누락 없음, 크기와 생성 시간 전후 비교 — 해당 없음 (미적용)
-- [x] Suspense 검토 결론 기록
+- 라이트/다크 테마가 전환 가능함
+- 시스템 설정에 따라 자동으로 테마가 적용됨
+- CSS 변수 기반으로 색상이 동적으로 변경됨
+- 페이지 새로고침 후에도 테마가 유지됨
 
-### Task 012-A: 테스트 러너 도입과 핵심 로직 테스트
+### Task 020: UI 컴포넌트 다크모드 스타일링
+
+**예상 소요 시간**: 5-6시간
 
 **구현 내용**:
 
-- `vitest.config.mts` - `environment: 'node'`, `vite-tsconfig-paths`로 `@` 별칭, `server-only` 빈 모듈 별칭
-- 순수 함수, `getInvoiceByPageId`(노션 클라이언트 모킹), `getAccessibleInvoice`, PDF 라우트 `GET` 테스트
-- `toSafeFileName`을 PDF 라우트에서 `lib/`로 분리 (현재 비공개 함수)
-- 근거: `node_modules/next/dist/docs/01-app/02-guides/testing/vitest.md` (async Server Component는 Vitest 미지원, E2E 권장)
-
-**결정**: Vitest 도입 승인, `test`를 `check-all`에 포함 (2026-11-16)
-
-**완료 기준**:
-
-- [x] `npm run test`가 노션 키 없이 통과 (55개)
-- [x] 만료 410, 항목 0건, 100건 초과 페이지네이션이 테스트로 확인됨 (모킹)
-- [x] PDF 라우트 404 / 410 / 500 / 200 매핑 확인
-
-### Task 012-B: 배포 준비
-
-**구현 내용**:
-
-- Vercel 프로젝트 설정, 환경변수 3개(Development / Preview / Production) 문서화
-- 프리뷰 배포에서 `assets/fonts` 포함 확인, 누락 시 `next.config.ts`의 `outputFileTracingIncludes`
-- 프리뷰 배포에서 010-A 캐시, 011-B 헤더와 rate limit 확인
-- Chromium 외 브라우저 PDF 수동 체크리스트
-- (승인 시) `.github/workflows/ci.yml`
-
-**결정**: CI 미포함(후속 과제), 배포 대상 Vercel (2026-11-16)
+- 모든 shadcn/ui 컴포넌트에 다크모드 클래스 추가
+- 견적서 조회 페이지 다크모드 스타일
+- 관리자 대시보드 다크모드 스타일
+- 차트 및 그래프 다크모드 대응
+- PDF 미리보기 다크모드 처리
 
 **완료 기준**:
 
-- [x] 배포 환경에서 화면과 PDF 정상 (curl: 화면 200, PDF 200 67,013B, 본문에 견적서 번호·클라이언트명·합계 확인). 한글 PDF는 사용자가 육안 확인
-- [x] 환경변수와 배포 절차가 README에 문서화됨
-- [x] 브라우저 수동 체크리스트 완료 (사용자 확인, 2026-11-16, 브라우저별 결과 기록은 없음)
-- [x] ROADMAP Phase 4 완료 표시
+- 모든 페이지에서 다크모드가 적절히 표시됨
+- 텍스트 가독성이 보장됨
+- 컴포넌트 경계와 구분이 명확함
+- 다크모드에서도 브랜드 일관성 유지
 
 ## 기술적 의존성 관계
 
 ```mermaid
 graph TD
-    A[Task 001: 환경 설정] --> B[Task 002: 라우팅 구조]
-    A --> C[Task 003: 타입 정의]
-    B --> D[Task 004: 컴포넌트 라이브러리]
-    C --> D
-    D --> E[Task 005: 견적서 UI]
-    D --> F[Task 006: 에러 UI]
-    C --> G[Task 007: Notion API]
-    E --> H[Task 008: 데이터 렌더링]
-    G --> H
-    D --> I1[Task 009-A: 폰트/PDF 템플릿]
-    H --> I2[Task 009-B: PDF 라우트/버튼]
-    I1 --> I2
-    I2 --> M[Task 009-1: 통합 테스트]
-    M --> J1[Task 010-A: 노션 호출 캐싱]
-    J1 --> K1[Task 011-A: 서버 로거/에러 화면]
-    K1 --> K2[Task 011-B: 보안 헤더/rate limit]
-    J1 --> J2[Task 010-B: 폰트 subset 검토]
-    K2 --> L1[Task 012-A: 테스트 러너/핵심 로직 테스트]
-    J2 --> L1
-    L1 --> L2[Task 012-B: 배포 준비]
+    A[Task 013: 관리자 인증] --> B[Task 014: 견적서 목록]
+    B --> C[Task 015: 검색/필터링]
+    B --> D[Task 016: 링크 생성]
+    D --> E[Task 017: 링크 복사]
+    D --> F[Task 018: 링크 공유]
+
+    G[Task 019: 다크모드 시스템] --> H[Task 020: UI 다크모드]
+    H --> I[Task 021: 테마 토글]
+
+    C --> J[Task 022: 통합 테스트]
+    F --> J
+    I --> J
+    J --> K[Task 023: 최적화]
+    K --> L[Task 024: 문서화/배포]
 ```
 
-- 010-B는 010-A에만 의존하고 011과는 독립이라 실행 순서를 바꿀 수 있습니다. 기본 순서는 011-B 다음입니다.
-- 012-A는 010-A의 캐시 래핑과 011-A의 로거가 반영된 코드를 테스트하므로 그 뒤에 둡니다.
+## 고도화 체크리스트
 
-## MVP 체크리스트
+### 관리자 대시보드 기능 확인
 
-### 핵심 기능 구현 확인
+- [ ] 관리자 로그인 및 인증 시스템 작동
+- [ ] 모든 견적서 목록이 표시됨
+- [ ] 검색 및 필터링 기능이 정상 작동
+- [ ] 페이지네이션 및 정렬 기능 작동
 
-- [x] **F001**: Notion API를 통한 견적서 데이터 조회
-- [x] **F002**: 고유 URL로 특정 견적서 내용 표시
-- [x] **F003**: 견적서를 PDF 파일로 변환 및 다운로드
+### 링크 관리 기능 확인
 
-### 필수 지원 기능 구현 확인
+- [ ] 각 견적서의 고유 링크가 생성됨
+- [ ] 원클릭으로 링크 복사 가능
+- [ ] 복사 성공 피드백이 표시됨
+- [ ] 다양한 방법으로 링크 공유 가능
 
-- [x] **F010**: 노션 페이지 ID 기반 고유 URL (`/invoice/[token]`) - 토큰 형식 검증과 실제 노션 조회 연동 완료 (유효기간 만료 판정은 Task 012-A 테스트로 확인, 실데이터 만료 화면 이동은 미확인)
-- [x] **F011**: 존재하지 않는 견적서 접근 시 에러 처리
-- [x] **F012**: 반응형 레이아웃 (모바일/태블릿/데스크톱)
+### 다크모드 기능 확인
+
+- [ ] 라이트/다크 모드 전환 가능
+- [ ] 시스템 설정 자동 감지
+- [ ] 모든 페이지에서 다크모드 정상 표시
+- [ ] 사용자 설정이 로컬에 저장됨
 
 ### 품질 검증
 
-- [x] 모든 페이지가 정상적으로 로드됨
-- [x] Notion 데이터 변경이 웹 화면에 반영됨 (유효기간 변경 전후 화면 변화로 확인, 별도 통제 실험은 아님)
-- [x] PDF 다운로드가 모든 환경에서 작동함 (Task 012-B 브라우저 수동 체크리스트를 사용자가 완료로 확인, 브라우저별 결과 기록은 없음)
-- [x] 에러 처리가 사용자 친화적임
-- [x] 반응형 디자인이 모든 기기에서 작동함 (375/768/1280px 확인, 실기기 미확인)
+- [ ] 모든 고도화 기능이 기존 MVP 기능과 충돌 없이 작동
+- [ ] 반응형 디자인이 모든 기기에서 유지됨
+- [ ] 성능 저하 없이 새 기능들이 작동함
+- [ ] 보안 취약점이 없음
 
 ### 테스트 검증
 
-- [x] API 연동 및 비즈니스 로직에 Playwright MCP 테스트 수행되었는가?
-- [x] 모든 사용자 플로우가 E2E 테스트되었는가? (만료 410과 `/unavailable?reason=expired`, 항목 0건 빈 상태 화면과 PDF 200 다운로드를 노션 실데이터로 Playwright 확인, 2026-11-16. 테스트 페이지는 확인 후 휴지통으로 이동, 100건 초과 페이지네이션은 모킹 테스트만)
-- [x] 에러 핸들링 및 엣지 케이스가 테스트되었는가? (만료 410, 항목 0건, 100건 초과를 Task 012-A Vitest 모킹 테스트로 확인, 실데이터 아님)
+- [ ] 관리자 플로우에 대한 E2E 테스트 수행
+- [ ] 링크 복사 및 공유 기능 테스트 완료
+- [ ] 다크모드 전환 테스트 통과
+- [ ] 크로스 브라우저 호환성 확인
 
 ## 예상 개발 일정
 
-**총 예상 기간**: 2-3주 (1인 개발 기준)
+**총 예상 기간**: 3-4주 (1인 개발 기준)
 
-- **Week 1**: Phase 1 ✅ + Phase 2 ✅ (Task 001-006)
-  - ✅ 프로젝트 설정 완료 (Task 001-003 완료)
-  - ✅ UI 구현 (Task 004-006 완료)
-  - ✅ 더미 데이터로 전체 플로우 검증
+- **Week 1**: Phase 5 (Task 013-015)
+  - 관리자 인증 시스템 구축
+  - 견적서 목록 페이지 구현
+  - 검색 및 필터링 기능 추가
 
-- **Week 2**: Phase 3 ✅ (Task 007-009-1)
-  - ✅ Notion API 통합 (Task 007)
-  - ✅ 실제 데이터 연동 (Task 008)
-  - ✅ PDF 생성 기능 구현 (Task 009-A, 009-B)
-  - ✅ 통합 테스트 및 검증 (Task 009-1)
+- **Week 2**: Phase 6 (Task 016-018)
+  - 고유 링크 생성 시스템
+  - 원클릭 복사 기능
+  - 링크 공유 통합
 
-- **Week 3**: Phase 4 ✅ (Task 010-A ~ 012-B)
-  - ✅ 노션 호출 캐싱 (Task 010-A)
-  - ✅ 서버 로거, 에러 화면, 보안 헤더, rate limiting (Task 011-A, 011-B)
-  - ✅ 폰트 subset 검토 (Task 010-B)
-  - ✅ 테스트 러너 도입과 핵심 로직 테스트 (Task 012-A)
-  - ✅ 배포 준비 및 실제 배포 (Task 012-B)
+- **Week 3**: Phase 7 (Task 019-021)
+  - 다크모드 테마 시스템 구축
+  - UI 컴포넌트 다크모드 적용
+  - 테마 토글 및 설정 관리
+
+- **Week 4**: Phase 8 (Task 022-024)
+  - 통합 테스트 수행
+  - 성능 최적화 및 보안 강화
+  - 문서화 및 배포 준비
 
 ## 위험 요소 및 대응 방안
 
 ### 기술적 위험
 
-1. **Notion API 제한**
-   - Rate limit 초과 가능성
-   - 대응: 캐싱 전략 구현, 요청 최적화 (Task 010-A), PDF 경로 rate limiting (Task 011-B)
+1. **Notion API 속도 제한**
+   - 대량 데이터 조회 시 API 한계
+   - 대응: 페이지네이션 및 캐싱 전략 강화
 
-2. **PDF 한글 렌더링 문제**
-   - 폰트 임베딩 이슈
-   - 대응: 사전 테스트, 대체 라이브러리 준비
+2. **관리자 인증 보안**
+   - 간단한 패스워드 방식의 한계
+   - 대응: 추후 OAuth 또는 JWT 기반 인증으로 업그레이드
 
-3. **대용량 견적서 처리**
-   - 많은 항목 시 성능 저하
-   - 대응: 페이지네이션, 가상 스크롤링
+3. **다크모드 일관성**
+   - 서드파티 컴포넌트의 다크모드 미지원
+   - 대응: 커스텀 스타일 오버라이드 준비
 
 ### 비즈니스 위험
 
-1. **사용자 경험 저하**
-   - 느린 로딩 속도
-   - 대응: 스켈레톤 UI, 점진적 로딩
+1. **사용자 혼란**
+   - 새로운 인터페이스 적응 필요
+   - 대응: 직관적인 UI/UX 설계 및 사용 가이드 제공
 
-2. **보안 이슈**
-   - API 키 노출
-   - 대응: 서버 사이드 처리, 환경 변수 관리
+2. **데이터 노출**
+   - 관리자 페이지를 통한 민감 정보 접근
+   - 대응: 역할 기반 접근 제어 및 감사 로그
 
 ## 성공 지표
 
-- **기술적 지표**
-  - 페이지 로드 시간 < 3초
-  - PDF 생성 시간 < 5초
-  - 에러율 < 1%
+### 기술적 지표
 
-- **사용자 경험 지표**
-  - 모바일 반응형 100% 지원
-  - 크로스 브라우저 호환성 100%
-  - 견적서 조회 성공률 > 99%
+- 관리자 페이지 로드 시간 < 2초
+- 링크 복사 성공률 > 99%
+- 다크모드 전환 시간 < 100ms
+- API 호출 최적화로 50% 성능 개선
+
+### 사용자 경험 지표
+
+- 관리자 작업 효율성 30% 향상
+- 링크 공유 시간 80% 단축
+- 다크모드 사용자 만족도 90% 이상
+- 전체 시스템 사용성 점수 85점 이상
+
+### 비즈니스 지표
+
+- 견적서 관리 시간 40% 감소
+- 클라이언트 응답률 25% 증가
+- 시스템 활용도 50% 상승
 
 ---
 
-**📝 문서 버전**: v2.0
-**📅 작성일**: 2026-11-11
-**📅 최종 업데이트**: 2026-11-16
-**🎯 목표**: MVP 핵심 기능 구현을 통한 빠른 시장 검증
-**📊 진행 상황**: Phase 1~3 완료 (Task 001~009-1), Phase 4 완료 (Task 010-A ~ 012-B, Vercel 배포 확인, 브라우저 수동 체크는 사용자 완료 확인). 만료·항목 0건 실데이터 E2E 확인 완료. 남은 것은 후속 과제(CSP, CI)
+**📝 문서 버전**: v3.1
+**📅 최종 업데이트**: 2025-10-08
+**🎯 목표**: MVP 기반 고도화를 통한 사용자 경험 혁신 및 관리 효율성 극대화
+**📊 진행 상황**: Phase 5 완료 (3/12 Tasks 완료 - 25%)
