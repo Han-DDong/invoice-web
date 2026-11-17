@@ -1,196 +1,348 @@
-# Development Guidelines
+# 프로젝트 개발 규칙
 
-> 이 문서는 AI Agent 전용 작업 규칙입니다. 프로젝트 고유 규칙만 기술합니다.
+## 프로젝트 개요
 
-## 1. 프로젝트 개요
+**노션 기반 견적서 조회 서비스** - 노션 DB에 입력한 견적서를 클라이언트가 공유 링크(`/invoice/[token]`)로 조회하고 PDF로 내려받습니다.
 
-- 목적: 노션 DB의 견적서를 **공유 토큰 링크**로 웹 조회하고 PDF로 다운로드하는 서비스
-- 스택: Next.js **16** (App Router, Turbopack) / React 19 / TypeScript strict / Tailwind CSS **v4** / shadcn/ui (new-york) / Zod 4 / @notionhq/client / @react-pdf/renderer / next-themes / npm
-- 노션 = CMS. 별도 DB·인증·관리자 페이지 없음 (MVP 범위 밖)
+### 핵심 기술 스택
 
-### 1.1 정보 출처 우선순위 (충돌 시 위에서 아래 순서로 따른다)
+- **프레임워크**: Next.js 16 (App Router + Turbopack)
+- **런타임**: React 19 + TypeScript 6 (strict)
+- **스타일링**: Tailwind CSS v4 + shadcn/ui (new-york)
+- **검증**: Zod 4 (노션 응답, 환경변수)
+- **외부 API**: @notionhq/client 5 (data source 기반 API)
+- **PDF**: @react-pdf/renderer 4
+- **테스트**: Vitest (`tests/*.test.ts`, node 환경)
 
-| 순위 | 출처                                                | 비고                         |
-| ---- | --------------------------------------------------- | ---------------------------- |
-| 1    | 실제 코드 (`app/`, `lib/`, `types/`, `components/`) | 최우선                       |
-| 2    | `.env.example`, `README.md`, `package.json`         | 코드와 동기화된 문서         |
-| 3    | `CLAUDE.md` (프로젝트)                              | 일부 구버전 서술 있음        |
-| 4    | `docs/PRD.md`, `docs/ROADMAP.md`                    | **구버전 설계 포함. 참고용** |
+> 폼 라이브러리(react-hook-form)와 Server Actions는 사용하지 않습니다. 이 서비스는 조회와 다운로드만 합니다.
 
-- **PRD/ROADMAP의 다음 내용은 폐기된 설계이므로 따르지 않는다**
-  - `/invoice/[notionPageId]` → 실제는 `/invoice/[token]`
-  - `NOTION_DATABASE_ID` → 실제는 `NOTION_INVOICE_DATABASE_ID`, `NOTION_ITEM_DATABASE_ID`
-  - `/api/generate-pdf` (POST) → 실제 계획은 `app/invoice/[token]/pdf/route.ts`
-  - 상태값은 노션 값 `대기/승인/거절`을 그대로 사용한다 (`draft/published/expired` 아님)
-- **ROADMAP의 ✅ 표시를 구현 완료 증거로 믿지 않는다.** 구현 여부는 코드로 확인한다
-- 구현 완료: 노션 조회(F001), 견적서 상세 UI(F002), PDF 다운로드(F003). 미구현은 Phase 4(성능·캐싱, 보안 강화, 테스트·배포)
+### 범위
 
-## 2. 프로젝트 아키텍처
+**포함**: 견적서 조회(`/invoice/[token]`), 노션 연동, PDF 다운로드(`/invoice/[token]/pdf`), 만료·오류 안내(`/unavailable`)
 
-| 경로                           | 역할                                                                                     |
-| ------------------------------ | ---------------------------------------------------------------------------------------- |
-| `app/page.tsx`                 | 홈 (서비스 소개 전용, 견적서 목록 노출 금지)                                             |
-| `app/invoice/[token]/page.tsx` | 견적서 상세 (토큰 링크로만 진입)                                                         |
-| `app/unavailable/page.tsx`     | 접근 불가 안내 (`?reason=`)                                                              |
-| `app/layout.tsx`               | ThemeProvider + Navbar + Footer 래핑                                                     |
-| `app/globals.css`              | Tailwind v4 테마 (`@theme inline`)                                                       |
-| `components/ui/`               | shadcn/ui 생성 컴포넌트 (badge, button, card, dropdown-menu, separator, skeleton, table) |
-| `components/layout/`           | navbar, footer, page-container, theme-toggle                                             |
-| `components/providers/`        | theme-provider                                                                           |
-| `lib/access.ts`                | 공유 토큰 스키마, 접근 불가 사유 enum, URL 헬퍼                                          |
-| `lib/env.ts`                   | 서버 환경변수 Zod 검증 (`getServerEnv()`)                                                |
-| `lib/site.ts`                  | `siteConfig` (이름/설명)                                                                 |
-| `lib/utils.ts`                 | `cn()`                                                                                   |
-| `types/invoice.ts`             | `Invoice`, `InvoiceItem`, `InvoiceStatus`, `InvoiceTotals`                               |
+**제외**: 관리자 대시보드, 이메일 발송, 템플릿 커스터마이징, 폼 입력
 
-### 2.1 신규 파일 배치 규칙
+---
 
-| 만들 것                        | 위치                                                |
-| ------------------------------ | --------------------------------------------------- |
-| 노션 클라이언트/조회/변환 로직 | `lib/` (서버 전용 파일, 예: `lib/notion.ts`)        |
-| 노션 응답 Zod 스키마           | `lib/` 의 노션 파일 옆 또는 `lib/schemas/`          |
-| 견적서 화면 전용 컴포넌트      | `components/invoice/`                               |
-| PDF 템플릿 컴포넌트            | `components/pdf/`                                   |
-| PDF 다운로드 엔드포인트        | `app/invoice/[token]/pdf/route.ts`                  |
-| 로딩/에러 UI                   | `app/invoice/[token]/loading.tsx`, `error.tsx`      |
-| 도메인 타입                    | `types/`                                            |
-| 커스텀 훅                      | `hooks/` (alias `@/hooks`)                          |
-| shadcn 컴포넌트                | **직접 작성 금지** → `npx shadcn@latest add <name>` |
+## 프로젝트 구조 규칙
 
-## 3. 코드 표준
+### 디렉토리 구조 (프로젝트 루트 기준, `src/` 없음)
 
-- 들여쓰기 2칸, 변수/함수 camelCase, 컴포넌트 PascalCase, 파일명 kebab-case
-- 변수·함수명은 영어, **주석·문서·커밋 메시지는 한국어**
-- `any` 금지 (ESLint `@typescript-eslint/no-explicit-any: error`) → `unknown` + Zod 검증 사용
-- import는 `@/` 별칭 사용 (`@/components`, `@/lib`, `@/ui`, `@/hooks`, `@/`)
-- 클래스 병합은 `cn()` (`@/lib/utils`) 사용
-- **세미콜론 스타일은 편집 중인 파일의 기존 스타일을 따른다** (현재 혼재)
-  - 세미콜론 사용: `lib/*.ts`, `app/layout.tsx`
-  - 세미콜론 없음: `app/page.tsx`, `app/invoice/**`, `app/unavailable/**`, `components/layout/*`
-  - 모든 문자열은 쌍따옴표
-- 한 파일의 스타일을 바꾸는 포맷팅 전용 수정 금지
+```
+app/                # App Router 페이지와 라우트 핸들러만 배치
+├── invoice/[token]/ # 견적서 페이지, pdf/route.ts
+├── unavailable/     # 접근 불가 안내
+├── layout.tsx       # 루트 레이아웃
+├── global-error.tsx # 루트 레이아웃 오류
+└── not-found.tsx
+components/
+├── ui/              # shadcn/ui 기본 컴포넌트
+├── invoice/         # 견적서 화면
+├── pdf/             # PDF 템플릿
+├── layout/          # 레이아웃 컴포넌트
+└── providers/       # Context 프로바이더
+lib/                 # 유틸리티, 서비스, 설정 (env.ts, notion.ts 등)
+types/               # 도메인 타입
+tests/               # Vitest 단위 테스트
+assets/fonts/        # PDF용 한글 폰트
+```
+
+### 경로 별칭 사용 필수
+
+```typescript
+// ✅ 필수: `@/*` → 프로젝트 루트
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+// ❌ 금지: 상대 경로 사용
+import { Button } from '../../../components/ui/button'
+```
+
+### 파일 네이밍
+
+- **파일/폴더명**: kebab-case (`invoice-summary.tsx`, `user-settings/`)
+- **컴포넌트명**: PascalCase (`InvoiceSummary`)
+- **금지**: snake_case, PascalCase 폴더명
+
+---
+
+## Next.js 16 필수 규칙
+
+> Next.js 16은 기존 지식과 다른 점이 많습니다. 코드를 쓰기 전에 `node_modules/next/dist/docs/`의 관련 가이드를 확인하세요.
+
+### App Router 엄격 사용
+
+- `app/` 아래 `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `route.ts`만 사용
+- Pages Router(`pages/`), `getServerSideProps`, `getStaticProps` 사용 금지
+
+### async request APIs (동기 접근 완전 제거)
+
+Next.js 16에서는 `params`, `searchParams`, `cookies()`, `headers()`, `draftMode()` 모두 **비동기 전용**입니다. 동기 접근은 호환 레이어 없이 에러가 납니다.
+
+```typescript
+// ✅ 필수: params는 Promise
+export default async function InvoicePage({
+  params,
+}: {
+  params: Promise<{ token: string }>
+}) {
+  const { token } = await params
+  // ...
+}
+
+// ✅ 라우트 핸들러도 동일
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params
+}
+
+// ❌ 금지: 동기 접근
+export default function Page({ params }: { params: { token: string } }) {
+  const data = getData(params.token)
+}
+```
+
+### Server Components 우선 설계
+
+- 기본은 Server Component, 상호작용(상태, 이벤트, 브라우저 API)이 필요할 때만 `'use client'`
+- `'use client'` 없이 `useState`, `useEffect` 사용 금지
+- 서버 전용 모듈은 `import 'server-only'`로 보호하고 클라이언트 컴포넌트에서 가져오지 않음
+
+### Next.js 16 변경 사항 주의
+
+- **Turbopack 기본**: `next dev`, `next build` 모두 Turbopack. webpack 전용 설정을 추가하지 않음
+- **`middleware.ts` → `proxy.ts`**: 이름이 바뀌었으며, 이 프로젝트는 `proxy.ts`를 쓰지 않음 (Proxy에서 전역 상태 의존 금지, 속도 제한은 라우트 핸들러에서 수행)
+- **`next lint` 제거**: ESLint는 `npm run lint`(ESLint CLI 직접 실행)로 실행
+- **캐싱**: `cacheComponents`는 쓰지 않음. 서버 캐시는 `unstable_cache`를 사용하고, 노션 fetch 자체는 `no-store`
+- **보안 헤더**는 `next.config.ts`의 `headers()`에서 설정
+- Node.js 20.9 이상 필요
+
+---
+
+## 스타일링 규칙
+
+### Tailwind CSS v4 유틸리티 클래스 우선
+
+- `tailwind.config` 없음. 테마는 `app/globals.css`의 `@theme inline`에서 설정
+- 다크 모드는 `next-themes`(class 방식), 색상은 OKLCH
+- Prettier가 `prettier-plugin-tailwindcss`로 클래스를 정렬함 (`cn`/`cva` 포함)
 
 ```tsx
-// DO: 컴포넌트 props 인터페이스 + 한국어 주석
-interface InvoiceHeaderProps {
-  invoice: Invoice
-}
-// 견적서 상단 정보 영역
-export function InvoiceHeader({ invoice }: InvoiceHeaderProps) { ... }
+// ✅ 필수: Tailwind 유틸리티 + 시맨틱 색상
+<div className="flex items-center justify-between rounded-lg bg-background p-4">
+  <h2 className="text-lg font-semibold text-foreground">제목</h2>
+</div>
 
-// DON'T
-export function InvoiceHeader({ invoice }: any) { ... } // any 금지
+// ❌ 금지: 인라인 스타일, 하드코딩된 색상
+<div style={{ display: 'flex' }} className="bg-white text-black">
 ```
 
-## 4. 기능 구현 표준
+### cn() 함수로 클래스 조합
 
-### 4.1 UI / 반응형 / 테마
+```tsx
+import { cn } from '@/lib/utils'
 
-- **모든 페이지는 `PageContainer`(`components/layout/page-container.tsx`)로 감싼다**. 컨테이너 폭(`max-w-3xl`)은 `lib/site.ts`의 `containerWidthClass` 한 곳에서만 정의하며, navbar·footer·PageContainer가 함께 참조한다. 페이지별로 `max-w-*`를 따로 지정하지 않는다 (상태 안내 카드의 `max-w-md`만 예외)
-- 반응형 필수: 모바일 우선 → `sm:` `md:` `lg:` 순으로 확장
-- 견적 항목 표는 **모바일에서 카드형**으로 전환 (page.tsx TODO F002)
-- 색상은 CSS 변수 토큰(`bg-background`, `text-muted-foreground` 등)만 사용. 하드코딩 색상 금지 (다크 모드 깨짐)
-- 아이콘은 `lucide-react`, 장식용 아이콘에는 `aria-hidden`
-- Tailwind v4: **`tailwind.config.*` 파일을 만들지 않는다**. 토큰 변경은 `app/globals.css`의 `@theme inline` / CSS 변수에서 수행
+// ✅ 필수
+<div className={cn('base-classes', isActive && 'active-classes', className)} />
 
-### 4.2 환경변수 / 서버 전용 코드
-
-- 환경변수는 **반드시 `getServerEnv()`** (`lib/env.ts`)로 읽는다. `process.env.NOTION_*` 직접 접근 금지
-- `getServerEnv()`와 노션 클라이언트는 **Server Component / Route Handler에서만** 호출한다. `"use client"` 파일에서 import 금지
-- `NEXT_PUBLIC_` 접두사로 노션 키/ID를 노출하지 않는다
-- 환경변수를 추가·삭제·개명할 때는 5절의 동기화 표를 따른다
-
-### 4.3 공유 토큰 접근 제어 (F004, F010)
-
-- 토큰은 `/invoice/[token]` 진입 시 **노션 조회 전에** `shareTokenSchema.safeParse`로 검증한다
-- 접근 불가 처리는 `redirect(getUnavailableUrl(reason))` 로만 한다. `"/unavailable?reason=..."` 문자열 직접 조합 금지
-- 상태/조건별 사유 매핑 (고정)
-
-| 조건                                                    | 화면 처리                     | PDF 라우트 응답 |
-| ------------------------------------------------------- | ----------------------------- | --------------- |
-| 토큰 형식 오류                                          | `/unavailable?reason=invalid` | 404             |
-| 견적서 없음 / 다른 DB 페이지 / 휴지통 페이지            | 404 화면 (`notFound()`)       | 404             |
-| 유효기간 경과 (`validUntil < 오늘(KST)`, 당일까지 유효) | `/unavailable?reason=expired` | 410             |
-| 노션 조회 실패 (API 오류, 검증 실패)                    | `/unavailable?reason=error`   | 500             |
-
-- 견적서 상태(`대기`/`승인`/`거절`)로는 접근을 막지 않는다. 판정은 `lib/invoice-access.ts`의 `getAccessibleInvoice` 한 곳에서 하며 화면과 PDF 라우트가 공유한다
-- `unpublished` 사유는 현재 어떤 경로에서도 발생하지 않는다 (`lib/access.ts`에는 남아 있음)
-
-- 견적서 상세·접근 불가 페이지의 `robots: { index: false, follow: false }` 메타데이터를 유지한다
-- 홈이나 다른 페이지에 견적서 목록·링크를 노출하지 않는다 (토큰 유출 방지)
-- 에러 메시지에 노션 응답 원문, 키, DB ID를 포함하지 않는다
-
-### 4.4 노션 데이터 → 도메인 변환 (F001)
-
-- 흐름: 노션 응답 → **Zod 검증** → `types/invoice.ts`의 `Invoice`로 변환 → 화면/PDF에서 사용
-- 노션 원본 타입을 컴포넌트에 직접 전달하지 않는다. 컴포넌트 props는 항상 `Invoice` / `InvoiceItem` / `InvoiceTotals`
-- `InvoiceItem.amount`는 **웹에서 `quantity * unitPrice`로 재계산**한다 (노션 Formula 값을 신뢰하지 않음)
-- 합계는 `InvoiceTotals`(`total`)로 계산하며 **부가세는 없다**. 합계 = 항목 금액(수량 x 단가) 합계
-- 날짜는 ISO 문자열로 저장하고 표시 시점에만 포맷한다
-- 노션 DB는 2개(환경변수에는 database ID를 넣고 항목 조회 시 data source ID를 자동 조회): 견적서 DB(`NOTION_INVOICE_DATABASE_ID`), 견적 항목 DB(`NOTION_ITEM_DATABASE_ID`, 견적서 relation 보유)
-
-### 4.5 PDF 생성 (F003)
-
-- 구현 위치: `app/invoice/[token]/pdf/route.ts` (GET) + `components/pdf/`
-- 라이브러리: `@react-pdf/renderer` (Puppeteer 도입 금지)
-- PDF 라우트도 4.3의 토큰·상태·유효기간 검증을 **동일하게** 수행한다 (검증 우회 금지)
-- 한글 출력을 위해 한글 폰트를 `Font.register`로 등록한다 (기본 폰트 사용 시 글자 깨짐)
-- PDF 템플릿은 화면과 **같은 `Invoice` / `InvoiceTotals`** 를 사용해 금액 불일치를 막는다
-
-## 5. 파일 연동 표준 (동시 수정 필수)
-
-| 변경 내용                                          | 함께 수정할 파일                                                                               |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 환경변수 추가/삭제/개명                            | `lib/env.ts` 스키마 + `.env.example` + `README.md` 환경변수 표                                 |
-| `UnavailableReason` 값 추가/삭제 (`lib/access.ts`) | `app/unavailable/page.tsx`의 `reasonMessages` (Record 키 전부 필요) + 호출하는 `redirect` 지점 |
-| 라우트 추가/삭제/개명                              | `README.md` 라우트 표 + 폴더 구조                                                              |
-| `lib/`·`types/`·`components/` 구조 변경            | `README.md` 폴더 구조                                                                          |
-| `types/invoice.ts` 필드 변경                       | 노션 변환/Zod 스키마 + 견적서 상세 컴포넌트 + `components/pdf/` 템플릿                         |
-| `siteConfig` 변경                                  | `app/layout.tsx` metadata, navbar/footer 표기 확인                                             |
-| 신규 npm 의존성 추가                               | `README.md` 기술 스택                                                                          |
-| 기능 구현 완료                                     | `docs/ROADMAP.md` 상태 갱신 + 코드의 해당 `TODO(Fxxx)` 주석 제거                               |
-| PRD와 실제 구현이 달라지는 결정                    | `docs/PRD.md` 해당 부분 갱신 (문서는 한국어)                                                   |
-
-## 6. 워크플로우 표준
-
-```
-요청 수신 → 코드 현황 확인(1.1 우선순위) → 구현
-  → npm run lint → npx tsc --noEmit → (UI/API 변경 시) Playwright MCP 검증
-  → 5절 연동 파일 갱신 → 보고
+// ❌ 금지: 문자열 직접 조합
+<div className={`base ${isActive ? 'active' : ''}`} />
 ```
 
-- 검증 명령: `npm run lint`, `npx tsc --noEmit`, 필요 시 `npm run build`
-- 테스트 러너는 Vitest(Task 012-A에서 사용자 요청으로 도입)다. 테스트는 `tests/*.test.ts`에 두고 `npm run test`(check-all 포함)로 실행한다. 다른 러너(Jest 등)는 사용자 요청 없이 추가하지 않는다
-- API/비즈니스 로직 변경은 Playwright MCP로 시나리오 검증 (정상 토큰 / 형식 오류 토큰 / 미발행 / 만료 / 노션 장애)
-- 커밋은 사용자가 요청할 때만 한다. 한국어 + 이모지 컨벤션 (`.claude/commands/git/commit.md` 참조)
-  - 예: `✨ feat: 견적서 노션 조회 구현`, `📝 docs: README 라우트 표 갱신`
-- 작업 단계가 끝나면 멈추고 사용자 지시를 기다린다 (ROADMAP 워크플로우)
+### 컨테이너 폭
 
-## 7. AI 의사결정 기준
+모든 컨테이너는 `lib/site.ts`의 `containerWidthClass`(`mx-auto w-full max-w-3xl px-4`)를 사용합니다.
 
-```
-요구사항이 PRD/ROADMAP과 코드 중 어디와 충돌하는가?
-├─ 코드/README/.env.example과 충돌 → 코드를 따르고 문서를 갱신 대상으로 보고
-├─ shadcn 컴포넌트가 필요한가?
-│   ├─ components/ui에 있음 → 재사용
-│   └─ 없음 → npx shadcn@latest add (직접 작성 금지)
-├─ 새 UI 조각이 2곳 이상에서 쓰이는가? → components/ 로 분리
-├─ 노션/환경변수 접근이 필요한가? → 서버 코드에서만, getServerEnv() 경유
-└─ MVP 이후 기능(대시보드, 이메일 발송, 승인/거절, 다국어)인가? → 구현하지 않고 사용자에게 확인
+### 금지 사항
+
+- 인라인 스타일(`style={{}}`) 금지 (단, PDF 템플릿의 `@react-pdf` `StyleSheet`는 예외)
+- 하드코딩된 색상 클래스(`bg-white`, `text-black`, `text-blue-600`) 금지
+- 커스텀 CSS 클래스 최소화, `!important` 남용 금지
+
+### shadcn/ui
+
+```bash
+npx shadcn@latest add [component-name]
 ```
 
-## 8. 금지 사항
+- 기본 UI는 `components/ui/`의 shadcn/ui 컴포넌트를 먼저 사용
 
-- ❌ `any` 사용, `// @ts-ignore`로 타입 오류 회피
-- ❌ 클라이언트 컴포넌트에서 `getServerEnv()` / 노션 클라이언트 import
-- ❌ `process.env`를 `lib/env.ts` 밖에서 직접 읽기 (`NOTION_*`)
-- ❌ `NEXT_PUBLIC_` 으로 시크릿 노출
-- ❌ 토큰 검증 없이 노션 조회 또는 PDF 생성
-- ❌ `/unavailable` URL 문자열 직접 작성 (`getUnavailableUrl` 사용)
-- ❌ 홈/네비게이션에 견적서 목록·링크 노출
-- ❌ `tailwind.config.*` 생성, 하드코딩 색상
-- ❌ `components/ui/*` 수동 신규 작성 (shadcn CLI 사용), 기존 파일의 임의 대규모 수정
-- ❌ 노션 Formula `amount` 값을 그대로 신뢰
-- ❌ `.env.local` 등 `.env*` 파일 커밋 (`.env.example`만 허용)
-- ❌ `shrimp_data/`, `.mcp.json`, `.claude/settings.local.json` 임의 수정·커밋
-- ❌ 사용자 요청 없는 의존성 대량 추가, Vitest 외 테스트 러너 도입, 영어 주석/문서 작성
+---
+
+## 컴포넌트 작성 규칙
+
+- **단일 책임**: 컴포넌트 하나는 하나의 명확한 책임만 가짐
+- **Props 인터페이스 필수**: `any` 금지, 명시적 타입 정의
+- **파일 크기**: 300줄 이하 권장, 초과 시 분할
+- **반응형 필수**: 모바일 우선 레이아웃
+- 견적서 화면은 `components/invoice/`, PDF 템플릿은 `components/pdf/`에 배치
+- PDF 색상은 다크 모드와 무관하게 `StyleSheet`에 고정
+
+---
+
+## 환경 변수 관리
+
+`lib/env.ts`에서 Zod로 검증합니다. `.env.example`을 `.env.local`로 복사해 채웁니다.
+
+| 변수                         | 설명            |
+| ---------------------------- | --------------- |
+| `NOTION_API_KEY`             | 노션 통합 키    |
+| `NOTION_INVOICE_DATABASE_ID` | 견적서 DB ID    |
+| `NOTION_ITEM_DATABASE_ID`    | 견적 항목 DB ID |
+
+- 값은 **database ID**입니다. data source ID가 아닙니다.
+- API 키와 DB ID는 응답 HTML, PDF, 로그, 사용자 노출 에러 문구에 나오면 안 됨
+- 클라이언트에서 환경변수 직접 접근 금지 (`env` 객체는 서버에서만 사용)
+
+### 환경 변수 추가 시 필수 작업
+
+1. `.env.example`에 변수 추가
+2. `lib/env.ts`의 Zod 스키마에 검증 규칙 추가
+3. `env` 객체 파싱에 변수 추가
+
+---
+
+## Notion 연동 및 데이터 흐름
+
+```
+노션 → lib/notion.ts (서버 전용 클라이언트)
+     → lib/invoice-service.ts (getInvoiceByPageId)
+     → lib/notion-parser.ts (Zod 검증, 도메인 변환)
+     → lib/invoice-access.ts (getAccessibleInvoice)
+     → 페이지와 PDF 라우트가 공유
+```
+
+- URL 토큰 = 노션 **페이지 ID**. 형식은 `lib/access.ts`의 `shareTokenSchema`로 검증
+- 페이지가 견적서 DB 소속인지 `parent.database_id`로 확인
+- 항목 DB는 `databases.retrieve`로 data source를 찾아(캐시) `dataSources.query`로 조회 (@notionhq/client 5)
+- 금액은 노션 값을 쓰지 않고 `수량 x 단가`로 재계산, 합계는 항목 금액 합계. **부가세 계산 없음** (`lib/invoice-calculations.ts`)
+- 날짜는 KST 기준 문자열로 비교, 만료는 `validUntil < 오늘(KST)`
+- 노션 응답은 반드시 Zod로 검증한 뒤 사용
+
+### 캐시 규칙
+
+- `getInvoiceByPageId`가 조회 **성공 결과만** `unstable_cache`로 30초 캐시
+- 실패(not_found, query_failed, validation_failed)는 캐시하지 않음
+- 토큰 형식 검증과 만료 판정은 캐시 밖(`getAccessibleInvoice`)에서 매 요청 수행
+
+### 오류 처리
+
+- 조회 실패는 `InvoiceFetchError`(not_found / query_failed / validation_failed)
+- 접근 판정 사유는 invalid / not_found / expired / error (`types/invoice-error.ts`)
+- 사용자에게 보이는 에러에는 노션 에러 원문을 노출하지 않음
+- 서버 로그는 `lib/logger.ts`의 `logServerError`로만 남기고, 오류 객체를 `console.error`로 통째로 출력하지 않음
+
+---
+
+## 라우트 동작 규칙
+
+### 견적서 페이지 `app/invoice/[token]/page.tsx`
+
+- not_found → `notFound()`
+- 그 외 실패 → `redirect('/unavailable?reason=...')`
+- `loading.tsx` 스트리밍 때문에 curl은 항상 200으로 보임. 리다이렉트는 브라우저(Playwright)로 확인
+
+### PDF 라우트 `app/invoice/[token]/pdf/route.ts`
+
+- 같은 접근 판정을 사용하고, 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로 응답
+- 모든 응답에 `Cache-Control: no-store`
+- 판정 전에 IP당 1분 10회 인메모리 제한 (초과 시 429 + `Retry-After`)
+- `renderToBuffer`에는 Document 요소가 필요하므로 `InvoicePdfDocument({ invoice, totals })`를 직접 호출 (`createElement`로 감싸지 않음)
+- 한글 폰트는 `assets/fonts`의 Noto Sans KR OTF를 `lib/pdf/fonts.ts`에서 `process.cwd()` 기준으로 등록
+- 다운로드 버튼은 `<a>` 링크이며 `download` 속성을 쓰지 않음 (실패 문구를 화면에 보여주기 위함)
+
+### 서버 전용 코드
+
+`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+
+---
+
+## 다중 파일 조정 규칙
+
+### 새 페이지 추가 시
+
+1. `app/[route]/page.tsx` 생성 (Server Component로 시작)
+2. 필요 시 `loading.tsx`, `error.tsx` 추가
+3. `params`는 Promise로 선언하고 `await`
+
+### 노션 필드 추가·변경 시
+
+1. `types/notion.ts`, `types/invoice.ts`: 타입 수정
+2. `lib/notion-parser.ts`: Zod 스키마와 변환 수정
+3. `lib/invoice-calculations.ts`: 계산에 영향이 있으면 수정
+4. `components/invoice/`, `components/pdf/`: 화면과 PDF 반영
+5. `tests/`: 파서와 서비스 테스트, fixture 갱신
+
+### 환경변수 추가 시
+
+`.env.example` → `lib/env.ts` 스키마 → `env` 파싱 순서로 수정
+
+---
+
+## 금지사항
+
+### 절대 금지
+
+- Pages Router, `getServerSideProps`, `getStaticProps` 사용
+- `params`/`searchParams`/`cookies()`/`headers()` 동기 접근
+- 인라인 스타일, 하드코딩된 색상 (PDF `StyleSheet` 제외)
+- 클라이언트에서 환경변수 직접 접근
+- `any` 타입
+- 상대 경로 import (`@/` 별칭 사용)
+- API 키, DB ID, 노션 에러 원문을 응답·PDF·로그에 노출
+- 화면 하단 문구 "부가세는 별도로 청구됩니다" 임의 변경 (사용자 요청으로 유지)
+
+### 지양 사항
+
+- `'use client'` 남용
+- 커스텀 CSS 클래스
+- 깊은 props drilling
+- 300줄 초과 파일
+
+---
+
+## 코드 품질 체크리스트
+
+### 개발 완료 후 필수 실행
+
+```bash
+npm run check-all   # typecheck + lint + format:check + test
+npm run build       # 빌드 테스트
+```
+
+UI나 라우트를 바꿨다면 dev 서버(`http://localhost:3000`)에서 Playwright MCP로 해당 페이지를 직접 확인합니다.
+
+### 컴포넌트 작성 후 확인
+
+- [ ] Server/Client Component 적절히 분리
+- [ ] Props 인터페이스 정의 (`any` 없음)
+- [ ] Tailwind 클래스, 시맨틱 색상 변수 사용
+- [ ] 반응형 확인
+- [ ] 파일 크기 300줄 이하
+- [ ] 단일 책임 원칙 준수
+
+---
+
+## AI Agent 결정 트리
+
+### 새 기능 구현 시
+
+1. **Server Component로 시작 가능?** YES → Server Component, NO(상호작용 필요) → `'use client'`
+2. **스타일링**: 기본 UI는 shadcn/ui, 커스텀은 Tailwind 유틸리티, 조건부는 `cn()`
+3. **데이터 패칭**: 노션 데이터는 `lib/invoice-access.ts`의 `getAccessibleInvoice` 사용 (노션 클라이언트를 직접 호출하지 않음)
+4. **폼이 필요해 보이면**: 이 서비스는 폼을 쓰지 않으므로 먼저 사용자에게 확인
+
+### 파일 수정 시
+
+1. **기존 파일 읽기 필수** - 수정 전 반드시 파일 읽기
+2. **패턴 일치 확인** - 기존 코드 스타일 유지 (세미콜론 없음, 작은따옴표, 들여쓰기 2칸)
+3. **타입 정의 확인** - Props 인터페이스 존재 여부 확인
+4. **Import 경로 확인** - 경로 별칭 사용 여부 확인
+5. **Next.js 16 API 확인** - 불확실하면 `node_modules/next/dist/docs/` 참고
+
+---
+
+**📝 문서 버전**: v2.0 (Next.js 16 기준)
+**🎯 목표**: AI Agent가 즉시 실행 가능한 프로젝트별 규칙 제공
