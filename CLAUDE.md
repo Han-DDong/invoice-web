@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Tailwind CSS v4, shadcn/ui (new-york), Radix UI, Lucide, next-themes
 - Zod 4 (노션 응답과 환경변수 검증), @notionhq/client 5, @react-pdf/renderer 4
 - 개발 도구: ESLint, Prettier, Husky, lint-staged, Vitest
-- 폼 라이브러리와 Server Actions는 쓰지 않습니다. 이 서비스는 조회와 다운로드만 합니다. (react-hook-form 미설치)
+- 폼 라이브러리와 Server Actions는 쓰지 않습니다. 공개 영역은 조회와 다운로드만 하고, 관리자 영역(Phase 5)은 일반 form과 URL 쿼리로 처리합니다. (react-hook-form 미설치)
 
 ## 문서
 
@@ -50,6 +50,7 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 `.env.example`을 `.env.local`로 복사해 채웁니다. `lib/env.ts`가 Zod로 검증합니다.
 
 - `NOTION_API_KEY`, `NOTION_INVOICE_DATABASE_ID`, `NOTION_ITEM_DATABASE_ID`
+- 관리자 영역: `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`(32자 이상). `getAdminEnv()`로 분리 검증하므로 없어도 공개 영역은 동작합니다.
 - 값은 **database ID**입니다. data source ID가 아닙니다.
 - API 키와 DB ID는 응답 HTML, PDF, 로그, 사용자 노출 에러 문구에 나오면 안 됩니다.
 
@@ -68,8 +69,8 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 
 ### 라우트 동작
 
-- `app/invoice/[token]/page.tsx`: not_found → `notFound()`, 그 외 실패 → `redirect('/unavailable?reason=...')`.
-- `app/invoice/[token]/pdf/route.ts`: 같은 판정을 쓰고 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로, `Cache-Control: no-store`로 응답합니다. 판정 전에 IP당 1분 10회 인메모리 제한(초과 시 429 + `Retry-After`)을 겁니다. `proxy.ts`는 쓰지 않습니다. (Proxy에서 전역 상태 의존 금지)
+- `app/(site)/invoice/[token]/page.tsx`: not_found → `notFound()`, 그 외 실패 → `redirect('/unavailable?reason=...')`.
+- `app/(site)/invoice/[token]/pdf/route.ts`: 같은 판정을 쓰고 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로, `Cache-Control: no-store`로 응답합니다. 판정 전에 IP당 1분 10회 인메모리 제한(초과 시 429 + `Retry-After`)을 겁니다. `proxy.ts`는 쓰지 않습니다. (Proxy에서 전역 상태 의존 금지)
 - 보안 헤더(`Referrer-Policy: no-referrer`, `X-Content-Type-Options`, `X-Frame-Options: DENY`)는 `next.config.ts`의 `headers()`에서 붙입니다. CSP와 CORS 허용 헤더는 넣지 않습니다.
 - 다운로드 버튼은 `<a>` 링크이고 `download` 속성이 없습니다. 실패 문구를 화면에 보여주기 위해서입니다.
 - `loading.tsx` 스트리밍 때문에 curl은 항상 200으로 보입니다. 리다이렉트는 브라우저(Playwright)로 확인해야 합니다.
@@ -83,7 +84,21 @@ UI나 라우트를 바꿨다면 Playwright MCP로 해당 페이지를 직접 확
 
 ### 서버 전용 코드
 
-`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`, `lib/auth/*`, `lib/invoice-list-service.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+
+### 관리자 영역 (Phase 5)
+
+- `/admin/login`(로그인 화면) → `POST /admin/session`(`app/admin/session/route.ts`, intent=login|logout) → `/admin`(대시보드). 같은 경로에 page와 route를 둘 수 없어 처리 경로를 분리했습니다.
+- 세션은 HMAC 서명 쿠키(`lib/auth/session.ts`, path=/admin, 8시간). `app/admin/(protected)/layout.tsx`와 각 페이지가 `requireAdminSession()`으로 검증합니다.
+- 공개 영역은 라우트 그룹 `app/(site)/`(Navbar/Footer), 관리자는 `app/admin/`(noindex, `Cache-Control: no-store`)입니다. 루트 레이아웃에는 html/body/테마 프로바이더만 있습니다.
+- 관리자 틀은 `components/admin/admin-shell.tsx`입니다. 데스크톱(md 이상)은 좌측 사이드바(대시보드, 견적서 관리, 클라이언트 관리, 테마, 로그아웃), 모바일은 상단 헤더 + Sheet 드로어입니다. 메뉴 정의는 `admin-nav-items.ts` 한 곳입니다.
+- 견적서 상세 `/admin/invoices/[id]`: 공개 화면 컴포넌트(`InvoiceView`)를 재사용하고(`pdfHref`, `showInquiryNote` 옵션), 목록의 검색·정렬·페이지 쿼리를 그대로 이어받아 "목록으로"가 보던 상태로 돌아갑니다. 조회는 `getAdminInvoice`(`lib/invoice-access.ts`)로, 토큰 형식·견적서 DB 소속 확인은 공개와 같고 **만료 판정만 건너뜁니다**(만료 안내 배너 표시). 공개 `getAccessibleInvoice`는 그대로 만료를 차단합니다.
+- 관리자 PDF `/admin/invoices/[id]/pdf`(route.ts): 세션이 없으면 401(텍스트), 만료와 무관하게 내려받습니다. 렌더링과 헤더는 `lib/pdf/invoice-pdf-response.ts`(`renderInvoicePdfResponse`, `textResponse`)를 공개 PDF 라우트와 공유합니다. 다운로드 버튼은 `<a>`(download 속성 없음)라 실패 시 텍스트 응답이 그대로 보입니다.
+- 화면: `/admin`(요약 카드, 상태별 현황, 최근 견적서 5건, 최근 활동), `/admin/invoices`(검색, 필터, 정렬, 10개 페이지), `/admin/clients`(클라이언트 집계, 검색, 정렬, 페이지). 모든 상태는 URL 쿼리입니다.
+- 데이터는 `getInvoiceSummaries()`(30초 캐시) 하나를 세 화면이 공유해 노션 호출이 늘지 않습니다. 목록 조회: 견적서 DB + 항목 DB를 각각 cursor로 한 번씩 읽고 합계는 수량 x 단가로 재계산합니다.
+- 순수 로직(노션과 env 비의존, Vitest): `lib/invoice-list-query.ts`(필터 → 정렬 → 페이지), `lib/client-summary.ts`(클라이언트명 공백, 대소문자 정리 후 집계), `lib/client-list-query.ts`, `lib/admin-dashboard.ts`(상태별 집계, 만료/임박(7일), 최근 활동), `lib/relative-time.ts`(KST 절대, 상대 시간).
+- 최근 활동은 별도 로그 저장소 없이 노션 `created_time`(생성), `last_edited_time`(생성 후 1분 넘게 지난 수정)으로 만듭니다. 그래서 노션에서 상태만 바꿔도 "수정"으로 보이고 이력은 최신 1회만 남습니다.
+- 클라이언트 관리는 별도 노션 DB 없이 견적서의 `clientName` 집계입니다. 이름이 바뀌면 다른 클라이언트로 집계됩니다.
 
 ### UI
 

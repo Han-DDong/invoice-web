@@ -14,13 +14,13 @@
 - **PDF**: @react-pdf/renderer 4
 - **테스트**: Vitest (`tests/*.test.ts`, node 환경)
 
-> 폼 라이브러리(react-hook-form)와 Server Actions는 사용하지 않습니다. 이 서비스는 조회와 다운로드만 합니다.
+> 폼 라이브러리(react-hook-form)와 Server Actions는 사용하지 않습니다. 공개 영역은 조회와 다운로드만 하고, 관리자 영역(Phase 5)의 로그인·검색·필터는 일반 form(GET/POST)과 URL 쿼리로 처리합니다.
 
 ### 범위
 
-**포함**: 견적서 조회(`/invoice/[token]`), 노션 연동, PDF 다운로드(`/invoice/[token]/pdf`), 만료·오류 안내(`/unavailable`)
+**포함**: 견적서 조회(`/invoice/[token]`), 노션 연동, PDF 다운로드(`/invoice/[token]/pdf`), 만료·오류 안내(`/unavailable`), 관리자 영역(`/admin`, Phase 5: 비밀번호 로그인, 대시보드, 견적서 목록·검색·필터, 클라이언트 집계 목록)
 
-**제외**: 관리자 대시보드, 이메일 발송, 템플릿 커스터마이징, 폼 입력
+**제외**: 이메일 발송, 템플릿 커스터마이징, 견적서 생성·수정 폼(노션에서 편집), 사용자 계정·역할 관리
 
 ---
 
@@ -30,15 +30,22 @@
 
 ```
 app/                # App Router 페이지와 라우트 핸들러만 배치
-├── invoice/[token]/ # 견적서 페이지, pdf/route.ts
-├── unavailable/     # 접근 불가 안내
-├── layout.tsx       # 루트 레이아웃
+├── (site)/          # 공개 영역 라우트 그룹 (Navbar/Footer 포함, URL 영향 없음)
+│   ├── page.tsx     # 홈
+│   ├── invoice/[token]/ # 견적서 페이지, pdf/route.ts
+│   └── unavailable/ # 접근 불가 안내
+├── admin/           # 관리자 영역 (자체 헤더, noindex)
+│   ├── login/       # 로그인 화면 (인증 불필요)
+│   ├── session/     # 로그인·로그아웃 POST 처리 (route.ts)
+│   └── (protected)/ # 세션 검증 그룹: invoices 목록 등
+├── layout.tsx       # 루트 레이아웃 (html, body, 테마 프로바이더만)
 ├── global-error.tsx # 루트 레이아웃 오류
 └── not-found.tsx
 components/
 ├── ui/              # shadcn/ui 기본 컴포넌트
 ├── invoice/         # 견적서 화면
 ├── pdf/             # PDF 템플릿
+├── admin/           # 관리자 화면 (사이드바 틀, 대시보드, 목록 테이블, 검색·필터)
 ├── layout/          # 레이아웃 컴포넌트
 └── providers/       # Context 프로바이더
 lib/                 # 유틸리티, 서비스, 설정 (env.ts, notion.ts 등)
@@ -186,11 +193,13 @@ npx shadcn@latest add [component-name]
 
 `lib/env.ts`에서 Zod로 검증합니다. `.env.example`을 `.env.local`로 복사해 채웁니다.
 
-| 변수                         | 설명            |
-| ---------------------------- | --------------- |
-| `NOTION_API_KEY`             | 노션 통합 키    |
-| `NOTION_INVOICE_DATABASE_ID` | 견적서 DB ID    |
-| `NOTION_ITEM_DATABASE_ID`    | 견적 항목 DB ID |
+| 변수                         | 설명                                             |
+| ---------------------------- | ------------------------------------------------ |
+| `NOTION_API_KEY`             | 노션 통합 키                                     |
+| `NOTION_INVOICE_DATABASE_ID` | 견적서 DB ID                                     |
+| `NOTION_ITEM_DATABASE_ID`    | 견적 항목 DB ID                                  |
+| `ADMIN_PASSWORD`             | 관리자 로그인 비밀번호 (`getAdminEnv`)           |
+| `ADMIN_SESSION_SECRET`       | 세션 쿠키 서명 시크릿, 32자 이상 (`getAdminEnv`) |
 
 - 값은 **database ID**입니다. data source ID가 아닙니다.
 - API 키와 DB ID는 응답 HTML, PDF, 로그, 사용자 노출 에러 문구에 나오면 안 됨
@@ -238,13 +247,13 @@ npx shadcn@latest add [component-name]
 
 ## 라우트 동작 규칙
 
-### 견적서 페이지 `app/invoice/[token]/page.tsx`
+### 견적서 페이지 `app/(site)/invoice/[token]/page.tsx`
 
 - not_found → `notFound()`
 - 그 외 실패 → `redirect('/unavailable?reason=...')`
 - `loading.tsx` 스트리밍 때문에 curl은 항상 200으로 보임. 리다이렉트는 브라우저(Playwright)로 확인
 
-### PDF 라우트 `app/invoice/[token]/pdf/route.ts`
+### PDF 라우트 `app/(site)/invoice/[token]/pdf/route.ts`
 
 - 같은 접근 판정을 사용하고, 실패 시 404(invalid, not_found) / 410(expired) / 500(error)을 텍스트로 응답
 - 모든 응답에 `Cache-Control: no-store`
@@ -253,9 +262,18 @@ npx shadcn@latest add [component-name]
 - 한글 폰트는 `assets/fonts`의 Noto Sans KR OTF를 `lib/pdf/fonts.ts`에서 `process.cwd()` 기준으로 등록
 - 다운로드 버튼은 `<a>` 링크이며 `download` 속성을 쓰지 않음 (실패 문구를 화면에 보여주기 위함)
 
+### 관리자 영역 `/admin` (Phase 5)
+
+- 인증: `ADMIN_PASSWORD` 비교(`timingSafeEqual`) 후 HMAC 서명 쿠키(`lib/auth/session.ts`). httpOnly, sameSite=lax, secure(prod), path=/admin, 8시간
+- 로그인·로그아웃은 `app/admin/session/route.ts`(POST, form). 로그인 화면과 같은 경로에는 `route.ts`를 둘 수 없어 분리. IP당 1분 5회 제한
+- 보호: `app/admin/(protected)/layout.tsx`와 **각 페이지**가 `requireAdminSession()` 호출 (레이아웃은 이동 시 재실행되지 않음)
+- 관리자 환경변수는 `getAdminEnv()`로 분리해, 미설정이어도 공개 영역은 동작
+- 응답은 `Cache-Control: no-store`(`next.config.ts`), 메타데이터는 noindex
+- 폭은 `lib/site.ts`의 `adminContainerWidthClass`
+
 ### 서버 전용 코드
 
-`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
+`lib/notion.ts`, `lib/invoice-service.ts`, `lib/invoice-access.ts`, `lib/pdf/fonts.ts`, `lib/logger.ts`, `lib/rate-limit.ts`, `lib/auth/*`, `lib/invoice-list-service.ts`는 `server-only`를 import합니다. 클라이언트 컴포넌트에서 가져오지 마세요.
 
 ---
 

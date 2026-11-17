@@ -57,7 +57,7 @@ npm run dev
 - **보안 헤더** (`next.config.ts`의 `headers()`, 모든 경로): `Referrer-Policy: no-referrer`(토큰이 URL 경로에 있어 외부로 Referer를 보내지 않음), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`.
 - **CSP**: 도입하지 않았습니다. nonce 방식은 모든 페이지를 동적 렌더링해야 하고, nonce 없는 방식은 `'unsafe-inline'`이 필요하기 때문입니다. `frame-ancestors`를 포함한 CSP는 후속 과제입니다.
 - **CORS**: 교차 출처에서 호출하는 API가 없으므로 `Access-Control-Allow-*` 헤더를 추가하지 않고 브라우저 기본 동일 출처 정책을 그대로 씁니다.
-- **PDF rate limit** (`lib/rate-limit.ts`, `app/invoice/[token]/pdf/route.ts`): IP당 1분 10회, 초과 시 `429` + `Retry-After`(초) + `Cache-Control: no-store`. 화면 경로는 제한하지 않습니다.
+- **PDF rate limit** (`lib/rate-limit.ts`, `app/(site)/invoice/[token]/pdf/route.ts`): IP당 1분 10회, 초과 시 `429` + `Retry-After`(초) + `Cache-Control: no-store`. 화면 경로는 제한하지 않습니다.
   - 공식 문서가 Proxy에서 전역 상태에 의존하지 말라고 안내하므로 `proxy.ts`가 아닌 Route Handler 모듈 메모리에 카운터를 둡니다.
   - **한계**: 카운터가 서버 인스턴스 메모리에만 있어 서버리스 인스턴스 사이에 공유되지 않고, 인스턴스가 재시작되면 초기화됩니다. 남용을 완화할 뿐 정확한 제한이 아닙니다. 외부 저장소(Redis 계열)는 의존성과 환경변수가 늘어나 도입하지 않았습니다.
   - IP는 `x-forwarded-for` 첫 값(없으면 `x-real-ip`)을 씁니다. Vercel처럼 플랫폼이 이 헤더를 설정하는 환경을 전제로 하며, 프록시 없이 서버를 직접 노출하면 클라이언트가 헤더를 위조해 제한을 우회할 수 있습니다.
